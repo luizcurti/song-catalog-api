@@ -1,0 +1,31 @@
+module.exports = {
+  clearMocks: true,
+  collectCoverage: true,
+  collectCoverageFrom: ["<rootDir>/src/**/*.{ts,tsx}"],
+  preset: 'ts-jest',
+  coverageDirectory: "coverage",
+  testEnvironment: 'node',
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
+  testMatch: ["**/*.spec.ts", "**/*.test.ts"],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/models/'],
+  roots: ['<rootDir>/src'],
+  moduleNameMapper: {
+    "^@config/(.*)$": "<rootDir>/src/config/$1",
+    "^@shared/(.*)$": "<rootDir>/src/shared/$1",
+    "^@modules/(.*)$": "<rootDir>/src/modules/$1",
+    "^@errors/(.*)$": "<rootDir>/src/errors/$1",
+    "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+    "^@types/(.*)$": "<rootDir>/src/types/$1",
+  },
+  coveragePathIgnorePatterns: [
+    '/node_modules/', 
+    '/dist/', 
+    '/shared/', 
+    '/db/', 
+    '/modules/song/infra/',
+    '/config',
+    '/errors',
+  ],
+};

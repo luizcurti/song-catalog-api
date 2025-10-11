@@ -1,0 +1,14 @@
+{
+  "name": "music",
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "root",
+  "password": "root",
+  "database": "music",
+  "migrations": "['src/shared/infra/database/migrations/*.ts']",
+  "entities": "['src/modules/**/entities/*.ts']",
+  "cli": {
+    "migrationsDir": "src/shared/infra/database/migrations"
+  }
+}

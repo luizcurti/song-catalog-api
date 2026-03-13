@@ -6,31 +6,25 @@ import * as Yup from 'yup';
 
 class CreateSongController {
   async handle(request: Request, response: Response) {
-    const { name, artist, imageurl, notes, popularity } = request.body;
-
     const schema = Yup.object({
       name: Yup.string().required(),
-      artist: Yup.string().required(), 
+      artist: Yup.string().required(),
       imageurl: Yup.string().required(),
       notes: Yup.string().required(),
-      popularity: Yup.string().required()
+      popularity: Yup.number().min(0).max(10).required(),
     });
 
-    const validation = await schema.validate(request.body);
-
-    if (!validation)
-      throw new AppError('Validations failed', 400, 'VALIDATIONS_FAILED');
+    let validated: Yup.InferType<typeof schema>;
+    try {
+      validated = await schema.validate(request.body, { abortEarly: true, stripUnknown: true });
+    } catch (err) {
+      throw new AppError((err as Yup.ValidationError).message, 400, 'VALIDATIONS_FAILED');
+    }
 
     const createSongUseCase = container.resolve(CreateSongUseCase);
 
-    await createSongUseCase.execute({
-      name, 
-      artist, 
-      imageurl, 
-      notes, 
-      popularity
-    });
-    return response.status(200).json({ message: 'Song created successfully' });
+    const song = await createSongUseCase.execute(validated);
+    return response.status(201).json(song);
   }
 }
 

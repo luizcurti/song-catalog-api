@@ -11,7 +11,7 @@ class DeleteSongController {
     await deleteSongUseCase.execute({
       id
     });
-    return response.status(200).json({ message: 'Song deleted successfully' });
+    return response.status(204).send();
   }
 }
 

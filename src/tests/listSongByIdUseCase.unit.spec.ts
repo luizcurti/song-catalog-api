@@ -43,7 +43,7 @@ describe('ListSongByIdUseCase', () => {
       artist: 'Old Artist',
       imageurl: 'Old Image URL',
       notes: 'Old Notes',
-      popularity: '5',
+      popularity: 5,
       created_at: new Date().toDateString(),
       updated_at: new Date().toDateString(),
     };
@@ -64,7 +64,7 @@ describe('ListSongByIdUseCase', () => {
       artist: 'Old Artist',
       imageurl: 'Old Image URL',
       notes: 'Old Notes',
-      popularity: '5',
+      popularity: 5,
       created_at: new Date(),
       updated_at: new Date(),
     };

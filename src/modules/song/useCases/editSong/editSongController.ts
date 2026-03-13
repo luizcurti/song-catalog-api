@@ -1,22 +1,32 @@
 import { container } from 'tsyringe';
 import { EditSongUseCase } from './editSongUseCase';
 import { Request, Response } from 'express';
+import { AppError } from '@errors/appError';
+import * as Yup from 'yup';
 
 class EditSongController {
   async handle(request: Request, response: Response) {
-    const editSongUseCase = container.resolve(EditSongUseCase);
     const { id } = request.params;
-    const { name, artist, imageurl, notes, popularity } = request.body;
 
-    await editSongUseCase.execute({
-      id,
-      name, 
-      artist, 
-      imageurl, 
-      notes, 
-      popularity
+    const schema = Yup.object({
+      name: Yup.string().required(),
+      artist: Yup.string().required(),
+      imageurl: Yup.string().required(),
+      notes: Yup.string().required(),
+      popularity: Yup.number().min(0).max(10).required(),
     });
-    return response.status(200).json({ message: 'Song updated successfully' });
+
+    let validated: Yup.InferType<typeof schema>;
+    try {
+      validated = await schema.validate(request.body, { abortEarly: true, stripUnknown: true });
+    } catch (err) {
+      throw new AppError((err as Yup.ValidationError).message, 400, 'VALIDATIONS_FAILED');
+    }
+
+    const editSongUseCase = container.resolve(EditSongUseCase);
+
+    const song = await editSongUseCase.execute({ id, ...validated });
+    return response.status(200).json(song);
   }
 }
 

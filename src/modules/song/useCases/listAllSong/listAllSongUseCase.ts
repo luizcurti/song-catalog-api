@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { ISongRepository } from '@modules/song/repositories/ISongRepository';
 import { inject, injectable } from 'tsyringe';
-import { IResponse } from '../createSong/iCreateSongDTO';
+import { IResponse } from '../listSongById/iListSongDTO';
 
 @injectable()
 class ListAllSongUseCase {

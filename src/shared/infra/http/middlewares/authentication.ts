@@ -5,15 +5,16 @@ export function ensureAuthenticated(
   response: Response,
   next: NextFunction
 ) {
-    try {
-      const { 'x-api-key': xApiKey } = request.headers;
+  const { 'x-api-key': xApiKey } = request.headers;
 
-      if (!xApiKey) { response.status(401).json({ 'Bad Request 2': 'Something went wrong!' }); }
-      if (xApiKey !== process.env.x_api_key) { response.status(401).json({ 'Bad Request 34': 'Something went wrong!' }); }
-
-      next();
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
+  if (!xApiKey) {
+    return response.status(401).json({ message: 'Missing API key' });
   }
+
+  if (xApiKey !== process.env.x_api_key) {
+    return response.status(401).json({ message: 'Invalid API key' });
+  }
+
+  return next();
+}
   

@@ -15,9 +15,10 @@ export function handlingErrors(
       });
     }
 
+    const isDev = process.env.NODE_ENV !== 'production';
     const data = {
-      errorStack: err.stack,
-      message: `Internal server error: \n${err.message}`,
+      message: 'Internal server error',
+      ...(isDev && { detail: err.message, errorStack: err.stack }),
     };
 
     return response.status(500).json(data);

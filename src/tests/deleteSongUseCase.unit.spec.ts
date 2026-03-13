@@ -45,7 +45,7 @@ describe('DeleteSongUseCase', () => {
       artist: 'Song Artist',
       imageurl: 'https://example.com/song-image.jpg',
       notes: 'Song Notes',
-      popularity: '10',
+      popularity: 10,
       created_at: new Date(),
       updated_at: new Date(),
     };

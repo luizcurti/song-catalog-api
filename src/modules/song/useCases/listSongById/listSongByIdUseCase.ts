@@ -12,17 +12,15 @@ class ListSongByIdUseCase {
   ) {}
 
   async execute({id}: IRequest): Promise<IResponse> {
-    let song;
+    const cached = await cache.get(id);
 
-    song = await cache.get(id);
+    if (cached) {
+      return JSON.parse(cached);
+    }
 
-    if (song) 
-      song = JSON.parse(song)
+    const song = await this.songRepository.findByID(id);
 
-      if (!song) 
-        song = await this.songRepository.findByID(id);
-  
-    if (!song) 
+    if (!song)
       throw new AppError('Song does not exist', 404, 'Not Found');
 
     return song;

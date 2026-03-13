@@ -32,7 +32,7 @@ describe('CreateSongController', () => {
     artist: 'Song Artist',
     imageurl: 'https://example.com/song-image.jpg',
     notes: 'Song Notes',
-    popularity: '10',
+    popularity: 10,
     created_at: expect.any(Date),
     updated_at: expect.any(Date),
   };
@@ -57,14 +57,14 @@ describe('CreateSongController', () => {
         artist: 'Song Artist',
         imageurl: 'https://example.com/song-image.jpg',
         notes: 'Song Notes',
-        popularity: '10',
+        popularity: 10,
       },
     };
 
     const schemaMock = {
       required: jest.fn().mockReturnThis(),
       string: jest.fn().mockReturnThis(),
-      validate: jest.fn().mockReturnValue(true),
+      validate: jest.fn().mockResolvedValue(request.body),
     };
 
     jest.spyOn(Yup, 'object').mockReturnValue(schemaMock as any);
@@ -74,8 +74,8 @@ describe('CreateSongController', () => {
 
     await createSongController.handle(request as Request, response as Response);
 
-    expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Song created successfully' });
+    expect(response.status).toHaveBeenCalledWith(201);
+    expect(response.json).toHaveBeenCalledWith(song);
   });
 
   it('should throw a validation error when creating a song with invalid data', async () => {
@@ -92,13 +92,13 @@ describe('CreateSongController', () => {
     const schemaMock = {
       required: jest.fn().mockReturnThis(),
       string: jest.fn().mockReturnThis(),
-      validate: jest.fn().mockReturnValue(false),
+      validate: jest.fn().mockRejectedValue(new Yup.ValidationError('name is a required field', '', 'name')),
     };
 
     jest.spyOn(Yup, 'object').mockReturnValue(schemaMock as any);
 
     await expect(createSongController.handle(request as Request, response as Response)).rejects.toEqual(
-      new AppError('Validations failed', 400, 'VALIDATIONS_FAILED')
+      new AppError('name is a required field', 400, 'VALIDATIONS_FAILED')
     );
 
     expect(response.status).not.toHaveBeenCalled();

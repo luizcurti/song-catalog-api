@@ -1,10 +1,10 @@
 # 🎵 Music Artist API
 
-A robust REST API for managing songs and artists, developed with Node.js, TypeScript, Express, and TypeORM.
+A REST API for managing a song catalog, built with Node.js, TypeScript, Express, TypeORM, and Redis.
 
 ## 📋 Table of Contents
 
-- [About the Project](#about-the-project)
+- [About](#about)
 - [Technologies](#technologies)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
@@ -13,82 +13,73 @@ A robust REST API for managing songs and artists, developed with Node.js, TypeSc
 - [Available Scripts](#available-scripts)
 - [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
+- [Authentication](#authentication)
 - [Tests](#tests)
 - [Docker](#docker)
-- [Contributing](#contributing)
 - [License](#license)
 
-## 🎯 About the Project
+## 🎯 About
 
-The Music Artist API is a backend application developed to manage a catalog of songs and artists. The API offers complete CRUD (Create, Read, Update, Delete) functionalities for songs, with Redis cache support and MySQL data persistence.
+Music Artist API is a backend service for managing a catalog of songs and artists. It provides full CRUD operations with Redis caching, MySQL persistence, and input validation.
 
 ### ✨ Features
 
-- ✅ Complete song management (CRUD)
-- ✅ Redis caching system
-- ✅ Data validation with Yup
+- ✅ Full song management (CRUD)
+- ✅ Redis caching with 1-hour TTL
+- ✅ Input validation with Yup
+- ✅ API key authentication middleware
 - ✅ Docker containerization
 - ✅ Database migrations with TypeORM
-- ✅ Unit testing with Jest
+- ✅ Unit testing with Jest (99%+ coverage)
 - ✅ Code linting with ESLint
-- ✅ Clean and modular architecture
+- ✅ Clean modular architecture (Use Cases / Repositories / Controllers)
 
 ## 🚀 Technologies
 
-This project was developed with the following technologies:
-
 ### Backend
-- **Node.js** - JavaScript runtime environment
-- **TypeScript** - JavaScript superset with static typing
-- **Express** - Minimalist web framework
-- **TypeORM** - ORM for TypeScript and JavaScript
+- **Node.js 18+** — Runtime
+- **TypeScript** — Static typing
+- **Express** — HTTP framework
+- **TypeORM 0.2** — ORM for MySQL
 
-### Database
-- **MySQL 8.0** - Database management system
-- **Redis** - In-memory cache
+### Database & Cache
+- **MySQL 8.0** — Primary data store
+- **Redis** — In-memory cache (TTL: 1h)
 
-### DevOps & Tools
-- **Docker** - Containerization
-- **Docker Compose** - Container orchestration
-- **Jest** - Testing framework
-- **ESLint** - JavaScript/TypeScript linter
-- **Yarn** - Package manager
-
-### Main Libraries
-- **express-async-errors** - Asynchronous error handling
-- **tsyringe** - Dependency injection container
-- **yup** - Schema validation
-- **cors** - CORS middleware
-- **helmet** - Security middleware
+### DevOps & Tooling
+- **Docker / Docker Compose** — Containerization
+- **Jest + ts-jest** — Unit testing
+- **ESLint** — Linting
+- **tsyringe** — Dependency injection
+- **Yup** — Schema validation
+- **helmet / cors** — Security middlewares
 
 ## 📋 Prerequisites
 
-Before starting, you need to have the following installed on your machine:
-
-- [Node.js](https://nodejs.org/) (version 18 or higher)
-- [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/)
+- [Node.js](https://nodejs.org/) v18 or higher
+- [npm](https://www.npmjs.com/)
 - [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)
-- [Git](https://git-scm.com/)
 
 ## 🔧 Installation
 
-1. Clone this repository:
 ```bash
 git clone https://github.com/luizcurti/music-artist.git
 cd music-artist
-```
-
-2. Install dependencies:
-```bash
-yarn install
-# or
 npm install
 ```
 
 ## ⚙️ Configuration
 
-1. Configure environment variables by creating a `.env` file:
+Create a `.env` file in the project root:
+
 ```env
+# Environment
+ENV=LOCAL
+NODE_ENV=development
+
+# Server
+PORT=3005
+
 # Database
 DB_HOST=localhost
 DB_PORT=3306
@@ -98,44 +89,31 @@ DB_DATABASE=music
 
 # Redis
 REDIS_HOST=localhost
-REDIS_PORT=6379
 
-# Server
-PORT=3005
-NODE_ENV=development
-```
-
-2. Start database services with Docker:
-```bash
-docker compose up -d mysql_database redis_server
-```
-
-3. Run database migrations:
-```bash
-yarn typeorm
+# Auth
+x_api_key=your-secret-api-key
 ```
 
 ## 🚀 Running the Application
 
-### Development
+### 1. Start infrastructure services
 ```bash
-# Start in development mode
-yarn dev
-
-# Start in development mode (with port process kill)
-yarn dev:clean
+docker compose up -d mysql_database redis_server
 ```
 
-### Production
+### 2. Run database migrations
 ```bash
-# Build the application
-yarn build
+npm run typeorm
+```
 
-# Start in production mode
-yarn start
+### 3. Start the application
 
-# Start in production mode (with port process kill)
-yarn start:clean
+```bash
+# Development (with hot reload)
+npm run dev
+
+# Development (kills port 3005 first)
+npm run dev:clean
 ```
 
 The API will be available at `http://localhost:3005`
@@ -144,181 +122,183 @@ The API will be available at `http://localhost:3005`
 
 | Script | Description |
 |--------|-------------|
-| `yarn dev` | Runs the application in development mode |
-| `yarn dev:clean` | Kills processes on port 3005 and runs in development mode |
-| `yarn start` | Runs the application in production mode |
-| `yarn start:clean` | Kills processes on port 3005 and runs in production mode |
-| `yarn build` | Compiles TypeScript to JavaScript |
-| `yarn test` | Runs tests with coverage |
-| `yarn eslint` | Runs ESLint linter |
-| `yarn typeorm` | Runs database migrations |
-| `yarn typeorm:show` | Shows migrations |
-| `yarn typeorm:revert` | Reverts the last migration |
-| `yarn typeorm:sync` | Synchronizes database schema |
-| `yarn kill:3005` | Kills processes running on port 3005 |
+| `npm run dev` | Start in development mode with hot reload |
+| `npm run dev:clean` | Kill port 3005 then start in development mode |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm run start` | Start compiled app in production mode |
+| `npm run start:clean` | Kill port 3005 then start in production mode |
+| `npm test` | Run all unit tests with coverage |
+| `npm run eslint` | Run ESLint |
+| `npm run typeorm` | Run pending database migrations |
+| `npm run typeorm:show` | Show migration status |
+| `npm run typeorm:revert` | Revert the last migration |
+| `npm run typeorm:sync` | Sync database schema |
+| `npm run kill:3005` | Kill any process running on port 3005 |
 
 ## 📁 Project Structure
 
 ```
 music-artist/
 ├── src/
-│   ├── config/           # Application configurations
-│   ├── errors/          # Custom error classes
-│   ├── modules/         # Application modules
-│   │   └── song/        # Song module
-│   ├── shared/          # Shared code
-│   │   ├── containers/  # Dependency injection container
-│   │   ├── generic/     # Generic interfaces and types
-│   │   └── infra/       # Infrastructure (database, server, etc.)
-│   └── tests/           # Unit tests
-├── db/                  # MySQL data (Docker volume)
-├── docker-compose.yml   # Docker Compose configuration
-├── package.json         # Dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-├── jest.config.cjs      # Jest configuration
-└── eslint.config.mjs    # ESLint configuration
+│   ├── config/                   # App config (env, database)
+│   ├── errors/                   # AppError class
+│   ├── modules/
+│   │   └── song/
+│   │       ├── infra/typeorm/    # Entity + TypeORM repository
+│   │       ├── repositories/     # Repository interface
+│   │       └── useCases/         # createSong | editSong | deleteSong | listAllSong | listSongById
+│   ├── shared/
+│   │   ├── containers/           # tsyringe DI bindings
+│   │   ├── generic/              # GenericRepository base class
+│   │   └── infra/
+│   │       ├── app.ts            # Express app bootstrap
+│   │       ├── server.ts         # HTTP server entry point
+│   │       ├── database/         # TypeORM connection + migrations
+│   │       ├── http/             # Routes + middlewares
+│   │       └── redis/            # Redis cache client
+│   └── tests/                    # Unit tests (controller + use case)
+├── music.collection.json         # Postman collection
+├── docker-compose.yml
+├── package.json
+├── tsconfig.json
+├── jest.config.cjs
+└── eslint.config.mjs
 ```
 
 ## 🌐 API Endpoints
 
-### Songs
+Base URL: `http://localhost:3005/api/music`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/songs` | List all songs |
-| GET | `/songs/:id` | Get a song by ID |
-| POST | `/songs` | Create a new song |
-| PUT | `/songs/:id` | Update a song |
-| DELETE | `/songs/:id` | Delete a song |
+| `GET` | `/api/music/` | List all songs |
+| `GET` | `/api/music/:id` | Get a song by ID |
+| `POST` | `/api/music/` | Create a new song |
+| `PUT` | `/api/music/:id` | Update a song |
+| `DELETE` | `/api/music/:id` | Delete a song |
 
-### Example Payload for Song Creation
+### Request / Response
 
+#### POST `/api/music/` — Create a song
+
+**Request body:**
 ```json
 {
-  "title": "Song Name",
-  "artist": "Artist Name",
-  "album": "Album Name",
-  "genre": "Musical Genre",
-  "duration": 240,
-  "release_year": 2023
+  "name": "Bohemian Rhapsody",
+  "artist": "Queen",
+  "imageurl": "https://example.com/image.jpg",
+  "notes": "A classic rock opera ballad.",
+  "popularity": 10
 }
 ```
 
-## 🧪 Tests
-
-Run unit tests:
-
-```bash
-# Run all tests
-yarn test
-
-# Run tests in watch mode
-yarn test --watch
-
-# Run tests with coverage
-yarn test --coverage
+**Response `201 Created`:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Bohemian Rhapsody",
+  "artist": "Queen",
+  "imageurl": "https://example.com/image.jpg",
+  "notes": "A classic rock opera ballad.",
+  "popularity": 10,
+  "created_at": "2026-01-01T00:00:00.000Z",
+  "updated_at": "2026-01-01T00:00:00.000Z"
+}
 ```
 
-Tests cover:
-- Controllers (createSong, deleteSong, editSong, listAllSong, listSongById)
-- Use Cases (createSong, deleteSong, editSong, listAllSong, listSongById)
+#### PUT `/api/music/:id` — Update a song
+
+**Request body** (all fields required):
+```json
+{
+  "name": "Bohemian Rhapsody",
+  "artist": "Queen",
+  "imageurl": "https://example.com/image.jpg",
+  "notes": "Updated notes.",
+  "popularity": 9
+}
+```
+
+**Response `200 OK`:** returns the updated song object.
+
+#### DELETE `/api/music/:id`
+
+**Response `204 No Content`**
+
+### Field Reference
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `name` | `string` | Required |
+| `artist` | `string` | Required |
+| `imageurl` | `string` | Required |
+| `notes` | `string` | Required |
+| `popularity` | `number` | Required, 0–10 |
+
+### Error format
+```json
+{
+  "message": "Human-readable error description",
+  "type": "ERROR_CODE"
+}
+```
+
+## 🔑 Authentication
+
+The `ensureAuthenticated` middleware is available and validates the `x-api-key` header against the `x_api_key` environment variable.
+
+To protect a route:
+```ts
+songsRoutes.post('/', ensureAuthenticated, createSongController.handle);
+```
+
+Requests without a valid key receive `401 Unauthorized`.
+
+## 🧪 Tests
+
+```bash
+# Run all tests with coverage report
+npm test
+```
+
+Test suites: **10 passed** | Tests: **15 passed** | Coverage: **99%+**
+
+Covered modules:
+- `createSong` — controller + use case
+- `editSong` — controller + use case
+- `deleteSong` — controller + use case
+- `listAllSong` — controller + use case
+- `listSongById` — controller + use case
 
 ## 🐳 Docker
 
-### Available Services
-
-The project uses Docker Compose with the following services:
-
-- **mysql_database**: MySQL 8.0 on port 3306
-- **redis_server**: Redis Alpine on port 6379
-- **app**: Node.js application on port 3005 (optional)
-
-### Docker Commands
-
 ```bash
-# Start all services
+# Start all services (MySQL + Redis + app)
 docker compose up -d
 
-# Start only database services
+# Start only infrastructure
 docker compose up -d mysql_database redis_server
 
 # Stop all services
 docker compose down
 
-# View service logs
+# View logs
 docker compose logs -f
-
-# Rebuild containers
-docker compose up --build
 ```
 
-## 🤝 Contributing
+### Services
 
-Contributions are always welcome! To contribute:
-
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Code Standards
-
-- Use ESLint to maintain code standards
-- Write tests for new features
-- Follow SOLID principles and Clean Architecture
-- Use TypeScript strictly
+| Service | Image | Port |
+|---------|-------|------|
+| `mysql_database` | mysql:8.0 | 3306 |
+| `redis_server` | redis:alpine | 6379 |
+| `app` | node:22-alpine | 3005 |
 
 ## 📝 License
 
-This project is under the ISC license. See the [LICENSE](LICENSE) file for more details.
+ISC — see [LICENSE](LICENSE) for details.
 
 ## 👨‍💻 Author
 
-**Luiz Curti**
+**Luiz Curti** — [@luizcurti](https://github.com/luizcurti)
 
-- GitHub: [@luizcurti](https://github.com/luizcurti)
-
----
-
-⭐️ If this project helped you, consider giving it a star!
-
-## 🚀 Quick Start
-
-1. **Before booting the system**, run:
-```bash
-yarn install
-```
-
-2. **Start Docker services**:
-```bash
-docker compose up -d mysql_database redis_server
-```
-
-3. **Run database migrations**:
-```bash
-yarn typeorm
-```
-
-4. **Start the application**:
-```bash
-yarn dev:clean
-```
-
-## 🧪 Testing
-
-To run the unit tests:
-```bash
-yarn test
-```
-
-## 📡 API Testing
-
-- **Base URL**: `http://localhost:3005/api/music/`
-- **Postman Collection**: The file `music.postman_collection.json` contains all routes for testing in Postman
-
-## 📝 Additional Notes
-
-- Docker is required to run the application
-- Make sure to run migrations before starting the application
-- The API will be available at port 3005 after successful startup

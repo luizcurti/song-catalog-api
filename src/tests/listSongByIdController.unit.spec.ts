@@ -31,7 +31,7 @@ describe('ListSongByIdController', () => {
         artist: 'Song Artist',
         imageurl: 'https://example.com/song-image.jpg',
         notes: 'Song Notes',
-        popularity: '10',
+        popularity: 10,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
     };

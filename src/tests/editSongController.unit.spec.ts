@@ -47,7 +47,7 @@ describe('EditSongController', () => {
             artist: 'New artist',
             imageurl: 'new-image.jpg',
             notes: 'New notes',
-            popularity: '5',
+            popularity: 5,
             created_at: new Date(),
             updated_at: new Date(),
         };
@@ -62,7 +62,7 @@ describe('EditSongController', () => {
               artist: 'New artist',
               imageurl: 'new-image.jpg',
               notes: 'New notes',
-              popularity: '5',
+              popularity: 5,
           },
         } as unknown as Request; 
 
@@ -76,10 +76,10 @@ describe('EditSongController', () => {
             artist: 'New artist',
             imageurl: 'new-image.jpg',
             notes: 'New notes',
-            popularity: '5',
+            popularity: 5,
         });
 
         expect(response.status).toHaveBeenCalledWith(200);
-        expect(response.json).toHaveBeenCalledWith({ message: 'Song updated successfully' });
+        expect(response.json).toHaveBeenCalledWith(mockSong);
     });
 });

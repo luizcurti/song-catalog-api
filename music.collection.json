@@ -16,7 +16,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test 1\",\n    \"artist\": \" Artist Test\",\n    \"imageurl\": \"http://imagem.com.br\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s\",\n    \"popularity\": \"7\"\n}",
+					"raw": "{\n    \"name\": \"Test 1\",\n    \"artist\": \"Artist Test\",\n    \"imageurl\": \"http://imagem.com.br\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s\",\n    \"popularity\": 7\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -51,7 +51,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test 3\",\n    \"artist\": \" Artist Test 333\",\n    \"imageUrl\": \"http://image.url 33\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the\",\n    \"popularity\": \"7\"\n}",
+					"raw": "{\n    \"name\": \"Test 3\",\n    \"artist\": \"Artist Test 333\",\n    \"imageurl\": \"http://image.url/33\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the\",\n    \"popularity\": 7\n}",
 					"options": {
 						"raw": {
 							"language": "json"

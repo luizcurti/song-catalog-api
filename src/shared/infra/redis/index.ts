@@ -1,17 +1,19 @@
 import { createClient } from 'redis';
 
+const TTL_SECONDS = 3600;
+
 class RedisCache {
   private readonly cache: any;
 
-   constructor() {
+  constructor() {
     this.cache = createClient({
       host: process.env.REDIS_HOST || 'localhost',
       port: 6379
     });
 
-    this.cache.on("connect", () => { console.log(`Redis connection established`); });
+    this.cache.on('connect', () => { console.log('Redis connection established'); });
 
-    this.cache.on("error", (error: any) => { console.error(`Redis error, service degraded: ${error}`); });
+    this.cache.on('error', (error: any) => { console.error(`Redis error, service degraded: ${error}`); });
   }
 
   async get(key: string | number) {
@@ -19,16 +21,16 @@ class RedisCache {
   }
 
   async add(key: string | number, value: any) {
-    this.cache.set(key, JSON.stringify(value));
+    this.cache.set(key, JSON.stringify(value), 'EX', TTL_SECONDS);
   }
 
-  async del(key: string | number){
+  async del(key: string | number) {
     this.cache.del(key);
   }
 
-  async flush(){
-    this.cache.flush(); 
+  async flush() {
+    this.cache.flushdb();
   }
-} 
+}
 
 export default new RedisCache();

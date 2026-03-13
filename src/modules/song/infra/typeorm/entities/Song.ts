@@ -27,8 +27,8 @@ class Song {
   @Column()
   notes!: string;
 
-  @Column()
-  popularity!: string;
+  @Column({ type: 'int' })
+  popularity!: number;
 
   @CreateDateColumn()
   created_at!: Date;

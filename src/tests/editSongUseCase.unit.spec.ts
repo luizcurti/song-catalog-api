@@ -41,7 +41,7 @@ describe('EditSongUseCase', () => {
       artist: 'Old Artist',
       imageurl: 'Old Image URL',
       notes: 'Old Notes',
-      popularity: '5',
+      popularity: 5,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -51,7 +51,7 @@ describe('EditSongUseCase', () => {
       artist: 'New Artist',
       imageurl: 'New Image URL',
       notes: 'New Notes',
-      popularity: '7',
+      popularity: 7,
     };
 
     songRepository.findByID.mockResolvedValueOnce(song);
@@ -84,7 +84,7 @@ describe('EditSongUseCase', () => {
         artist: 'New Artist',
         imageurl: 'New Image URL',
         notes: 'New Notes',
-        popularity: '7',
+        popularity: 7,
       })
     ).rejects.toEqual(new AppError('Song does not exist', 404, 'Not Found'));
   });

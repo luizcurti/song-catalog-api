@@ -4,7 +4,7 @@ export interface IRequest {
   artist: string;
   imageurl: string;
   notes: string;
-  popularity: string
+  popularity: number;
 }
 
 export interface IResponse {
@@ -13,7 +13,7 @@ export interface IResponse {
   artist: string;
   imageurl: string;
   notes: string;
-  popularity: string
+  popularity: number;
   created_at: Date;
   updated_at: Date;
-}    
+}

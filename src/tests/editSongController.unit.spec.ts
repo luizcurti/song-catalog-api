@@ -2,6 +2,8 @@ import "reflect-metadata";
 import { container } from 'tsyringe';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { AppError } from '@errors/appError';
+import * as Yup from 'yup';
 import { EditSongUseCase } from "@modules/song/useCases/editSong/editSongUseCase";
 import { EditSongController } from "@modules/song/useCases/editSong/editSongController";
 
@@ -81,5 +83,33 @@ describe('EditSongController', () => {
 
         expect(response.status).toHaveBeenCalledWith(200);
         expect(response.json).toHaveBeenCalledWith(mockSong);
+    });
+
+    it('should throw a validation error when editing a song with invalid data', async () => {
+        const id = String(uuidv4());
+
+        const schemaMock = {
+            required: jest.fn().mockReturnThis(),
+            string: jest.fn().mockReturnThis(),
+            validate: jest.fn().mockRejectedValue(
+                new Yup.ValidationError('name is a required field', '', 'name')
+            ),
+        };
+
+        jest.spyOn(Yup, 'object').mockReturnValue(schemaMock as any);
+
+        const requestMock = {
+            params: { id },
+            body: { name: '', artist: 'Artist', imageurl: 'img.jpg', notes: 'Notes', popularity: 5 },
+        } as unknown as Request;
+
+        const ctrl = new EditSongController();
+
+        await expect(ctrl.handle(requestMock, response as Response)).rejects.toEqual(
+            new AppError('name is a required field', 400, 'VALIDATIONS_FAILED')
+        );
+
+        expect(response.status).not.toHaveBeenCalled();
+        expect(response.json).not.toHaveBeenCalled();
     });
 });

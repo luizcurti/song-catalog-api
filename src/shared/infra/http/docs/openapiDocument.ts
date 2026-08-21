@@ -20,7 +20,7 @@ const songSchemaExample = {
 export const openapiDocument = {
   openapi: '3.0.3',
   info: {
-    title: 'Music Artist API',
+    title: 'Song Catalog API',
     version: '1.0.0',
     description: 'REST API for managing a song catalog.',
   },

@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "2cebdfac-7194-4c69-afdd-7d39209b3ecd",
-    "name": "Music Artist API",
-    "description": "End-to-end scenarios for the Music Artist API, covering both happy and sad paths for every endpoint. Runs top-to-bottom in one pass: the song created in \"Create song\" is reused (via the {{songId}} collection variable) by the later folders, and is deleted by the end of the \"Delete song\" folder.\n\nRun with the Postman \"Run collection\" button, or headlessly with `npx newman run music.collection.json --env-var baseUrl=http://localhost:3005 --env-var x_api_key=<your key>`.",
+    "name": "Song Catalog API",
+    "description": "End-to-end scenarios for the Song Catalog API, covering both happy and sad paths for every endpoint. Runs top-to-bottom in one pass: the song created in \"Create song\" is reused (via the {{songId}} collection variable) by the later folders, and is deleted by the end of the \"Delete song\" folder.\n\nRun with the Postman \"Run collection\" button, or headlessly with `npx newman run music.collection.json --env-var baseUrl=http://localhost:3005 --env-var x_api_key=<your key>`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "22118074"
   },

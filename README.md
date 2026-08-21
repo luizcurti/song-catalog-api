@@ -1,6 +1,6 @@
 # Song Catalog API
 
-[![CI](https://github.com/luizcurti/music-artist/actions/workflows/ci.yml/badge.svg)](https://github.com/luizcurti/music-artist/actions/workflows/ci.yml)
+[![CI](https://github.com/luizcurti/song-catalog-api/actions/workflows/ci.yml/badge.svg)](https://github.com/luizcurti/song-catalog-api/actions/workflows/ci.yml)
 [![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 
@@ -86,8 +86,8 @@ More diagrams (request lifecycle, cache read-through, authentication, CI pipelin
 ## Installation
 
 ```bash
-git clone https://github.com/luizcurti/music-artist.git
-cd music-artist
+git clone https://github.com/luizcurti/song-catalog-api.git
+cd song-catalog-api
 npm install
 ```
 
@@ -171,7 +171,7 @@ The API will be available at `http://localhost:3005`, with interactive docs at `
 ## Project Structure
 
 ```
-music-artist/
+song-catalog-api/
 ├── docs/
 │   ├── architecture.md           # Diagrams: layers, request lifecycle, caching, auth, CI
 │   ├── diagrams/                 # Mermaid (.mmd) sources for the diagrams

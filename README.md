@@ -1,4 +1,4 @@
-# Music Artist API
+# Song Catalog API
 
 [![CI](https://github.com/luizcurti/music-artist/actions/workflows/ci.yml/badge.svg)](https://github.com/luizcurti/music-artist/actions/workflows/ci.yml)
 [![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
@@ -26,7 +26,7 @@ A REST API for managing a song catalog, built with Node.js, TypeScript, Express,
 
 ## About
 
-Music Artist API is a backend service for managing a catalog of songs. It provides full CRUD operations with Redis caching, MySQL persistence, pagination/filtering, and input validation.
+Song Catalog API is a backend service for managing a catalog of songs. It provides full CRUD operations with Redis caching, MySQL persistence, pagination/filtering, and input validation.
 
 ### Features
 

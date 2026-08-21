@@ -71,9 +71,9 @@ The codebase follows a lightweight, use-case-oriented layout — each operation 
 
 Deliberately **not** included: a DI container/decorators (wiring is a handful of `new` calls in [`songModule.ts`](src/modules/song/songModule.ts)), and DDD tactical patterns like entities/value objects/aggregates — the domain here is a single CRUD resource, so an anemic model and a generic repository are enough. Adding either would be complexity without a matching benefit for this project's size.
 
-![Project structure](docs/diagrams/project-structure.jpg)
+![Project structure](docs/images/project-structure.jpg)
 
-![Layered architecture](docs/diagrams/layered-architecture.jpg)
+![Layered architecture](docs/images/layered-architecture.jpg)
 
 More diagrams (request lifecycle, cache read-through, authentication, CI pipeline) are in [`docs/architecture.md`](docs/architecture.md).
 
@@ -147,33 +147,35 @@ The API will be available at `http://localhost:3005`, with interactive docs at `
 
 ## Available Scripts
 
-| Script                     | Description                                                |
-| -------------------------- | ---------------------------------------------------------- |
-| `npm run dev`              | Start in development mode with hot reload                  |
-| `npm run dev:clean`        | Kill port 3005 then start in development mode              |
-| `npm run build`            | Compile TypeScript to JavaScript                           |
-| `npm run start`            | Start compiled app in production mode                      |
-| `npm run start:clean`      | Kill port 3005 then start in production mode               |
-| `npm test`                 | Run unit + integration + e2e tests with coverage           |
-| `npm run test:unit`        | Run unit tests only (no external services needed)          |
-| `npm run test:integration` | Run integration tests (needs MySQL + Redis)                |
-| `npm run test:e2e`         | Run end-to-end tests (needs MySQL + Redis)                 |
-| `npm run eslint`           | Run ESLint                                                 |
-| `npm run typecheck`        | Type-check without emitting output                         |
-| `npm run format`           | Format the codebase with Prettier                          |
-| `npm run format:check`     | Check formatting without writing changes                   |
-| `npm run typeorm`          | Run pending database migrations                            |
-| `npm run typeorm:show`     | Show migration status                                      |
-| `npm run typeorm:revert`   | Revert the last migration                                  |
-| `npm run docs:diagrams`    | Regenerate `docs/diagrams/*.jpg` from their `.mmd` sources |
-| `npm run kill:3005`        | Kill any process running on port 3005                      |
+| Script                     | Description                                                                |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `npm run dev`              | Start in development mode with hot reload                                  |
+| `npm run dev:clean`        | Kill port 3005 then start in development mode                              |
+| `npm run build`            | Compile TypeScript to JavaScript                                           |
+| `npm run start`            | Start compiled app in production mode                                      |
+| `npm run start:clean`      | Kill port 3005 then start in production mode                               |
+| `npm test`                 | Run unit + integration + e2e tests with coverage                           |
+| `npm run test:unit`        | Run unit tests only (no external services needed)                          |
+| `npm run test:integration` | Run integration tests (needs MySQL + Redis)                                |
+| `npm run test:e2e`         | Run end-to-end tests (needs MySQL + Redis)                                 |
+| `npm run eslint`           | Run ESLint                                                                 |
+| `npm run typecheck`        | Type-check without emitting output                                         |
+| `npm run format`           | Format the codebase with Prettier                                          |
+| `npm run format:check`     | Check formatting without writing changes                                   |
+| `npm run typeorm`          | Run pending database migrations                                            |
+| `npm run typeorm:show`     | Show migration status                                                      |
+| `npm run typeorm:revert`   | Revert the last migration                                                  |
+| `npm run docs:diagrams`    | Regenerate `docs/images/*.jpg` from the `.mmd` sources in `docs/diagrams/` |
+| `npm run kill:3005`        | Kill any process running on port 3005                                      |
 
 ## Project Structure
 
 ```
 music-artist/
 ├── docs/
-│   └── architecture.md           # Diagrams: layers, request lifecycle, caching, auth, CI
+│   ├── architecture.md           # Diagrams: layers, request lifecycle, caching, auth, CI
+│   ├── diagrams/                 # Mermaid (.mmd) sources for the diagrams
+│   └── images/                   # Rendered .jpg diagrams, embedded in this README and architecture.md
 ├── src/
 │   ├── config/                   # Env loading, env validation, typed app config
 │   ├── errors/                   # AppError class

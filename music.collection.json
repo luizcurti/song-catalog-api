@@ -1,182 +1,552 @@
 {
   "info": {
     "_postman_id": "2cebdfac-7194-4c69-afdd-7d39209b3ecd",
-    "name": "MUSIC",
+    "name": "Music Artist API",
+    "description": "End-to-end scenarios for the Music Artist API, covering both happy and sad paths for every endpoint. Runs top-to-bottom in one pass: the song created in \"Create song\" is reused (via the {{songId}} collection variable) by the later folders, and is deleted by the end of the \"Delete song\" folder.\n\nRun with the Postman \"Run collection\" button, or headlessly with `npx newman run music.collection.json --env-var baseUrl=http://localhost:3005 --env-var x_api_key=<your key>`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "22118074"
   },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3005", "type": "string" },
+    { "key": "x_api_key", "value": "replace-with-a-random-secret", "type": "string" },
+    { "key": "songId", "value": "", "type": "string" }
+  ],
   "item": [
     {
-      "name": "SAVE",
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "POST",
-        "header": [
-          {
-            "key": "x-api-key",
-            "value": "{{X_API_KEY}}",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Test 1\",\n    \"artist\": \"Artist Test\",\n    \"imageurl\": \"http://imagem.com.br\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s\",\n    \"popularity\": 7\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "127.0.0.1:3005/api/music/",
-          "host": ["127", "0", "0", "1"],
-          "port": "3005",
-          "path": ["api", "music", ""]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "EDIT",
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "PUT",
-        "header": [
-          {
-            "key": "x-api-key",
-            "value": "{{X_API_KEY}}",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Test 3\",\n    \"artist\": \"Artist Test 333\",\n    \"imageurl\": \"http://image.url/33\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the\",\n    \"popularity\": 7\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "localhost:3005/api/music/:id",
-          "host": ["localhost"],
-          "port": "3005",
-          "path": ["api", "music", ":id"],
-          "variable": [
+      "name": "Create song",
+      "item": [
+        {
+          "name": "Happy: creates a song (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Bohemian Rhapsody\",\n    \"artist\": \"Queen\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"A classic rock opera ballad.\",\n    \"popularity\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
             {
-              "key": "id",
-              "value": null
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns the created song with an id', () => {",
+                  "  pm.expect(body.id).to.be.a('string');",
+                  "  pm.expect(body.name).to.eql('Bohemian Rhapsody');",
+                  "  pm.expect(body.created_at).to.exist;",
+                  "});",
+                  "pm.collectionVariables.set('songId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: missing required field (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"artist\": \"Queen\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"Missing the name field.\",\n    \"popularity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('reports a validation failure', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('VALIDATIONS_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: popularity out of range (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Too Popular\",\n    \"artist\": \"Nobody\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"n\",\n    \"popularity\": 11\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('reports a validation failure', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('VALIDATIONS_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: missing API key (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"No Auth\",\n    \"artist\": \"Nobody\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"n\",\n    \"popularity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: invalid API key (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "totally-wrong-key" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Wrong Key\",\n    \"artist\": \"Nobody\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"n\",\n    \"popularity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 401', () => pm.response.to.have.status(401));"]
+              }
             }
           ]
         }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "LIST BY ID",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "GET",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "localhost:3005/api/music/:id",
-          "host": ["localhost"],
-          "port": "3005",
-          "path": ["api", "music", ":id"],
-          "variable": [
+      "name": "List songs",
+      "item": [
+        {
+          "name": "Happy: lists songs with pagination metadata (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/music/", "host": ["{{baseUrl}}"], "path": ["api", "music", ""] }
+          },
+          "event": [
             {
-              "key": "id",
-              "value": null
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns a paginated envelope', () => {",
+                  "  pm.expect(body.data).to.be.an('array');",
+                  "  pm.expect(body.meta).to.include.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "pm.test('includes the song created earlier', () => {",
+                  "  const ids = body.data.map((song) => song.id);",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get('songId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Happy: filters by artist (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/?artist=Queen",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ""],
+              "query": [{ "key": "artist", "value": "Queen" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('every result matches the artist filter', () => {",
+                  "  const body = pm.response.json();",
+                  "  body.data.forEach((song) => pm.expect(song.artist).to.eql('Queen'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: limit out of range (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/?limit=1000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ""],
+              "query": [{ "key": "limit", "value": "1000" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('reports a validation failure', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('VALIDATIONS_FAILED');",
+                  "});"
+                ]
+              }
             }
           ]
         }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "LIST ALL",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "GET",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "",
-          "options": {
-            "raw": {
-              "language": "json"
+      "name": "Get song by id",
+      "item": [
+        {
+          "name": "Happy: returns the song (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
             }
-          }
-        },
-        "url": {
-          "raw": "localhost:3005/api/music/",
-          "host": ["localhost"],
-          "port": "3005",
-          "path": ["api", "music", ""]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "DELETE",
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "x-api-key",
-            "value": "{{X_API_KEY}}",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "localhost:3005/api/music/:id",
-          "host": ["localhost"],
-          "port": "3005",
-          "path": ["api", "music", ":id"],
-          "variable": [
+          },
+          "event": [
             {
-              "key": "id",
-              "value": null
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns the expected song', () => {",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('songId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: not found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('reports Not Found', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('Not Found');",
+                  "});"
+                ]
+              }
             }
           ]
         }
-      },
-      "response": []
+      ]
+    },
+    {
+      "name": "Update song",
+      "item": [
+        {
+          "name": "Happy: updates the song (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Bohemian Rhapsody (Remastered)\",\n    \"artist\": \"Queen\",\n    \"imageurl\": \"https://example.com/image.jpg\",\n    \"notes\": \"Updated notes.\",\n    \"popularity\": 9\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns the updated fields', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.name).to.eql('Bohemian Rhapsody (Remastered)');",
+                  "  pm.expect(body.popularity).to.eql(9);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: missing API key (401)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"x\",\n    \"artist\": \"y\",\n    \"imageurl\": \"z\",\n    \"notes\": \"n\",\n    \"popularity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: invalid body (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"x\",\n    \"artist\": \"y\",\n    \"imageurl\": \"z\",\n    \"notes\": \"n\",\n    \"popularity\": -1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('reports a validation failure', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('VALIDATIONS_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: not found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{x_api_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"x\",\n    \"artist\": \"y\",\n    \"imageurl\": \"z\",\n    \"notes\": \"n\",\n    \"popularity\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('reports Not Found', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Delete song",
+      "item": [
+        {
+          "name": "Sad: missing API key (401)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Happy: deletes the song (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-api-key", "value": "{{x_api_key}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sad: already deleted (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "x-api-key", "value": "{{x_api_key}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/music/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "music", ":id"],
+              "variable": [{ "key": "id", "value": "{{songId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('reports Not Found', () => {",
+                  "  pm.expect(pm.response.json().type).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Happy: reports healthy (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('reports database and redis as up', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.eql({ status: 'ok', database: 'up', redis: 'up' });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

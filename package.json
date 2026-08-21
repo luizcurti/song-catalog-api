@@ -1,11 +1,11 @@
 {
-  "name": "music-artist-api",
+  "name": "song-catalog-api",
   "version": "1.0.0",
   "description": "REST API for managing a song catalog, built with TypeScript, Express, TypeORM, and Redis.",
   "main": "index.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/luizcurti/music-artist.git"
+    "url": "https://github.com/luizcurti/song-catalog-api.git"
   },
   "engines": {
     "node": ">=18"

@@ -6,3 +6,9 @@
 *.log
 .DS_Store
 /db
+
+.env
+.env.local
+.env.*.local
+
+.husky/_

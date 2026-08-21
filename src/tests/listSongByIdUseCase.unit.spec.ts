@@ -1,89 +1,82 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
-import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
+import { randomUUID } from 'crypto';
+
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import { ListSongByIdUseCase } from '@modules/song/useCases/listSongById/listSongByIdUseCase';
+import { AppError } from '@errors/appError';
 import cache from '@shared/infra/redis';
-import { v4 as uuidv4 } from 'uuid';
-import { createClient } from "redis";
-type RedisClient = ReturnType<typeof createClient>;
 
 jest.mock('@shared/infra/redis', () => ({
-  add: jest.fn(),
-  get: jest.fn(),
-  del: jest.fn(),
+  __esModule: true,
+  default: { add: jest.fn(), get: jest.fn(), del: jest.fn() },
 }));
 
 describe('ListSongByIdUseCase', () => {
-  let songRepository: ISongRepository;
+  let songRepository: jest.Mocked<SongRepository>;
   let listSongByIdUseCase: ListSongByIdUseCase;
-
-  beforeAll(() => {
-    container.registerInstance<RedisClient>('RedisClient', {} as RedisClient);
-  });
 
   beforeEach(() => {
     songRepository = {
+      create: jest.fn(),
       findByID: jest.fn(),
-    } as unknown as jest.Mocked<ISongRepository>;
-
-    container.registerInstance<ISongRepository>('SongRepository', songRepository);
-
-    listSongByIdUseCase = container.resolve(ListSongByIdUseCase);
+      findAll: jest.fn(),
+      findPaginated: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
+    listSongByIdUseCase = new ListSongByIdUseCase(songRepository);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should list a song by its id', async () => {
+  it('returns the cached song without hitting the repository', async () => {
+    const id = randomUUID();
     const song = {
-      id: uuidv4(),
-      name: 'Old Song',
-      artist: 'Old Artist',
-      imageurl: 'Old Image URL',
-      notes: 'Old Notes',
+      id,
+      name: 'Song Name',
+      artist: 'Song Artist',
+      imageurl: 'https://example.com/song.jpg',
+      notes: 'Notes',
       popularity: 5,
-      created_at: new Date().toDateString(),
-      updated_at: new Date().toDateString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
+    (cache.get as jest.Mock).mockResolvedValueOnce(JSON.stringify(song));
 
-    const mockedSong = { ...song };
-
-    jest.spyOn(cache, 'get').mockImplementation(() => Promise.resolve(JSON.stringify(song)));
-
-    const result = await listSongByIdUseCase.execute({ id: song.id });
+    const result = await listSongByIdUseCase.execute(id);
 
     expect(result).toEqual(song);
+    expect(songRepository.findByID).not.toHaveBeenCalled();
   });
 
-  it('should fetch the song from the database if it is not in the cache', async () => {
+  it('falls back to the repository on a cache miss and populates the cache', async () => {
+    const id = randomUUID();
     const song = {
-      id: uuidv4(),
-      name: 'Old Song',
-      artist: 'Old Artist',
-      imageurl: 'Old Image URL',
-      notes: 'Old Notes',
+      id,
+      name: 'Song Name',
+      artist: 'Song Artist',
+      imageurl: 'https://example.com/song.jpg',
+      notes: 'Notes',
       popularity: 5,
       created_at: new Date(),
       updated_at: new Date(),
     };
+    (cache.get as jest.Mock).mockResolvedValueOnce(null);
+    songRepository.findByID.mockResolvedValueOnce(song);
 
-    jest.spyOn(cache, 'get').mockImplementation(() => Promise.resolve(null));
-    jest.spyOn(songRepository, 'findByID').mockImplementation(() => Promise.resolve(song));
-
-    const result = await listSongByIdUseCase.execute({ id: song.id });
+    const result = await listSongByIdUseCase.execute(id);
 
     expect(result).toEqual(song);
+    expect(cache.add).toHaveBeenCalledWith(id, song);
   });
 
-  it('should throw an error if the song does not exist', async () => {
-    const songId = '1';
-    jest.spyOn(cache, 'get').mockImplementation(() => Promise.resolve(null));
-    jest.spyOn(songRepository, 'findByID').mockImplementation(() => Promise.resolve(null));
+  it('throws a not-found error when the song does not exist anywhere', async () => {
+    (cache.get as jest.Mock).mockResolvedValueOnce(null);
+    songRepository.findByID.mockResolvedValueOnce(null);
 
-    await expect(listSongByIdUseCase.execute({ id: songId }))
-          .rejects.toEqual(new AppError('Song does not exist', 404, 'Not Found'));
-
+    await expect(listSongByIdUseCase.execute(randomUUID())).rejects.toEqual(
+      new AppError('Song does not exist', 404, 'Not Found'),
+    );
   });
 });

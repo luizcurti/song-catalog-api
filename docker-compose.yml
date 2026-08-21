@@ -1,11 +1,11 @@
 services:
   mysql_database:
     container_name: mysql
-    image: mysql:8.0    
+    image: mysql:8.0
     command: mysqld --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: always
     ports:
-      - "3307:3306"
+      - '3307:3306'
     volumes:
       - ./db/mysql:/var/lib/mysql
     environment:
@@ -19,22 +19,25 @@ services:
     command: redis-server
     restart: always
     ports:
-      - "6379:6379"      
+      - '6379:6379'
 
   app:
     image: node:22-alpine
-    command: sh -c "npm install --legacy-peer-deps && npm run dev"
+    command: sh -c "npm install && npm run dev"
     ports:
-      - "3005:3005"
+      - '3005:3005'
     working_dir: /app
     volumes:
       - ./:/app
     environment:
+      NODE_ENV: development
       DB_DATABASE: music
       DB_HOST: mysql_database
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: root
       REDIS_HOST: redis_server
+      REDIS_PORT: 6379
+      X_API_KEY: local-dev-only-key-not-a-secret
     stdin_open: true
     tty: true

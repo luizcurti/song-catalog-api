@@ -1,0 +1,6 @@
+flowchart TD
+    Start(["Request to a write endpoint"]) --> HasKey{"x-api-key header present?"}
+    HasKey -- no --> Missing["401 Missing API key"]
+    HasKey -- yes --> Matches{"key === X_API_KEY?"}
+    Matches -- no --> Invalid["401 Invalid API key"]
+    Matches -- yes --> Next["next() -> controller"]

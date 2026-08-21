@@ -1,30 +1,27 @@
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { inject, injectable } from 'tsyringe';
-import  cache from '@shared/infra/redis';
-import { IRequest, IResponse } from './iListSongDTO';
+import cache from '@shared/infra/redis';
 
-@injectable()
-class ListSongByIdUseCase {
-  constructor(
-    @inject('SongRepository')
-    private songRepository: ISongRepository
-  ) {}
+import { Song } from '../../infra/typeorm/entities/Song';
 
-  async execute({id}: IRequest): Promise<IResponse> {
+export class ListSongByIdUseCase {
+  constructor(private readonly songRepository: SongRepository) {}
+
+  async execute(id: string): Promise<Song> {
     const cached = await cache.get(id);
 
     if (cached) {
-      return JSON.parse(cached);
+      return JSON.parse(cached) as Song;
     }
 
     const song = await this.songRepository.findByID(id);
 
-    if (!song)
+    if (!song) {
       throw new AppError('Song does not exist', 404, 'Not Found');
+    }
+
+    await cache.add(song.id, song);
 
     return song;
   }
 }
-
-export { ListSongByIdUseCase };

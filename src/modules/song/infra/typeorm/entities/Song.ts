@@ -1,18 +1,8 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-import config from '@config/index';
-
-const { music } = config.database.names;
-
-@Entity({ database: music, name: 'songs' })
-class Song {
-  @PrimaryGeneratedColumn("uuid")
+@Entity('songs')
+export class Song {
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column()
@@ -36,5 +26,3 @@ class Song {
   @UpdateDateColumn()
   updated_at!: Date;
 }
-
-export { Song };

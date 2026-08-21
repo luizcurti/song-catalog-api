@@ -1,15 +1,22 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
-import { ListAllSongUseCase } from './listAllSongUseCase';
 import { Request, Response } from 'express';
 
-class ListAllSongController {
-  async handle(request: Request, response: Response) {
-    const listAllSongUseCase = container.resolve(ListAllSongUseCase);
+import { AppError } from '@errors/appError';
 
-    const listSongs = await listAllSongUseCase.execute();
-    return response.status(200).json(listSongs);
-  }
+import { listSongsQuerySchema } from './listSongsQuery';
+import { ListAllSongUseCase } from './listAllSongUseCase';
+
+export class ListAllSongController {
+  constructor(private readonly listAllSongUseCase: ListAllSongUseCase) {}
+
+  handle = async (request: Request, response: Response): Promise<Response> => {
+    let query;
+    try {
+      query = await listSongsQuerySchema.validate(request.query, { abortEarly: true, stripUnknown: true });
+    } catch (err) {
+      throw new AppError((err as Error).message, 400, 'VALIDATIONS_FAILED');
+    }
+
+    const songs = await this.listAllSongUseCase.execute(query);
+    return response.status(200).json(songs);
+  };
 }
-
-export { ListAllSongController };

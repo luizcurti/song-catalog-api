@@ -1,0 +1,8 @@
+flowchart TD
+    Start(["GET /api/music/:id"]) --> CheckCache{"Cache.get(id)"}
+    CheckCache -- hit --> ReturnCached["Return cached song"]
+    CheckCache -- miss --> QueryDb["Repository.findByID(id)"]
+    QueryDb --> Found{"Song found?"}
+    Found -- no --> NotFound["404 Not Found"]
+    Found -- yes --> Populate["Cache.add(id, song)"]
+    Populate --> ReturnFresh["Return song"]

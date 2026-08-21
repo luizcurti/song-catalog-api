@@ -1,197 +1,182 @@
 {
-	"info": {
-		"_postman_id": "2cebdfac-7194-4c69-afdd-7d39209b3ecd",
-		"name": "MUSIC",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "22118074"
-	},
-	"item": [
-		{
-			"name": "SAVE",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test 1\",\n    \"artist\": \"Artist Test\",\n    \"imageurl\": \"http://imagem.com.br\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s\",\n    \"popularity\": 7\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "127.0.0.1:3005/api/music/",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "3005",
-					"path": [
-						"api",
-						"music",
-						""
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "EDIT",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test 3\",\n    \"artist\": \"Artist Test 333\",\n    \"imageurl\": \"http://image.url/33\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the\",\n    \"popularity\": 7\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:3005/api/music/:id",
-					"host": [
-						"localhost"
-					],
-					"port": "3005",
-					"path": [
-						"api",
-						"music",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": null
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "LIST BY ID",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:3005/api/music/:id",
-					"host": [
-						"localhost"
-					],
-					"port": "3005",
-					"path": [
-						"api",
-						"music",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": null
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "LIST ALL",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:3005/api/music/",
-					"host": [
-						"localhost"
-					],
-					"port": "3005",
-					"path": [
-						"api",
-						"music",
-						""
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "DELETE",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:3005/api/music/:id",
-					"host": [
-						"localhost"
-					],
-					"port": "3005",
-					"path": [
-						"api",
-						"music",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": null
-						}
-					]
-				}
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "2cebdfac-7194-4c69-afdd-7d39209b3ecd",
+    "name": "MUSIC",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22118074"
+  },
+  "item": [
+    {
+      "name": "SAVE",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{X_API_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Test 1\",\n    \"artist\": \"Artist Test\",\n    \"imageurl\": \"http://imagem.com.br\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s\",\n    \"popularity\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "127.0.0.1:3005/api/music/",
+          "host": ["127", "0", "0", "1"],
+          "port": "3005",
+          "path": ["api", "music", ""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "EDIT",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{X_API_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Test 3\",\n    \"artist\": \"Artist Test 333\",\n    \"imageurl\": \"http://image.url/33\",\n    \"notes\": \"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the\",\n    \"popularity\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:3005/api/music/:id",
+          "host": ["localhost"],
+          "port": "3005",
+          "path": ["api", "music", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": null
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "LIST BY ID",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:3005/api/music/:id",
+          "host": ["localhost"],
+          "port": "3005",
+          "path": ["api", "music", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": null
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "LIST ALL",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:3005/api/music/",
+          "host": ["localhost"],
+          "port": "3005",
+          "path": ["api", "music", ""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{X_API_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:3005/api/music/:id",
+          "host": ["localhost"],
+          "port": "3005",
+          "path": ["api", "music", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": null
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
 }

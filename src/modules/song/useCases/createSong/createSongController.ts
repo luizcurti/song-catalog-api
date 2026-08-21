@@ -1,31 +1,22 @@
-import { container } from 'tsyringe';
-import { CreateSongUseCase } from './createSongUseCase';
 import { Request, Response } from 'express';
+
 import { AppError } from '@errors/appError';
-import * as Yup from 'yup';
 
-class CreateSongController {
-  async handle(request: Request, response: Response) {
-    const schema = Yup.object({
-      name: Yup.string().required(),
-      artist: Yup.string().required(),
-      imageurl: Yup.string().required(),
-      notes: Yup.string().required(),
-      popularity: Yup.number().min(0).max(10).required(),
-    });
+import { songSchema } from '../songSchema';
+import { CreateSongUseCase } from './createSongUseCase';
 
-    let validated: Yup.InferType<typeof schema>;
+export class CreateSongController {
+  constructor(private readonly createSongUseCase: CreateSongUseCase) {}
+
+  handle = async (request: Request, response: Response): Promise<Response> => {
+    let validated;
     try {
-      validated = await schema.validate(request.body, { abortEarly: true, stripUnknown: true });
+      validated = await songSchema.validate(request.body, { abortEarly: true, stripUnknown: true });
     } catch (err) {
-      throw new AppError((err as Yup.ValidationError).message, 400, 'VALIDATIONS_FAILED');
+      throw new AppError((err as Error).message, 400, 'VALIDATIONS_FAILED');
     }
 
-    const createSongUseCase = container.resolve(CreateSongUseCase);
-
-    const song = await createSongUseCase.execute(validated);
+    const song = await this.createSongUseCase.execute(validated);
     return response.status(201).json(song);
-  }
+  };
 }
-
-export { CreateSongController };

@@ -1,45 +1,55 @@
-import { createClient } from 'redis';
-import { promisify } from 'util';
+import { createClient, RedisClientType } from 'redis';
+
+import config from '@config/index';
+import { logger } from '@shared/infra/logger';
 
 const TTL_SECONDS = 3600;
 
 class RedisCache {
-  private readonly cache: any;
-  private readonly getAsync: (key: string) => Promise<string | null>;
-  private readonly setAsync: (key: string, value: string, mode: string, duration: number) => Promise<unknown>;
-  private readonly delAsync: (key: string) => Promise<number>;
-  private readonly flushAsync: () => Promise<string>;
+  private readonly client: RedisClientType;
 
   constructor() {
-    this.cache = createClient({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: 6379
+    this.client = createClient({
+      socket: {
+        host: config.redis.host,
+        port: config.redis.port,
+      },
     });
 
-    this.getAsync   = promisify(this.cache.get).bind(this.cache);
-    this.setAsync   = promisify(this.cache.set).bind(this.cache);
-    this.delAsync   = promisify(this.cache.del).bind(this.cache);
-    this.flushAsync = promisify(this.cache.flushdb).bind(this.cache);
-
-    this.cache.on('connect', () => { console.log('Redis connection established'); });
-
-    this.cache.on('error', (error: any) => { console.error(`Redis error, service degraded: ${error}`); });
+    this.client.on('connect', () => logger.info('redis connection established'));
+    this.client.on('error', (error) => logger.error({ err: error }, 'redis error, service degraded'));
   }
 
-  async get(key: string | number): Promise<string | null> {
-    return this.getAsync(String(key));
+  async connect(): Promise<void> {
+    if (!this.client.isOpen) {
+      await this.client.connect();
+    }
   }
 
-  async add(key: string | number, value: any): Promise<void> {
-    await this.setAsync(String(key), JSON.stringify(value), 'EX', TTL_SECONDS);
+  async disconnect(): Promise<void> {
+    if (this.client.isOpen) {
+      await this.client.quit();
+    }
   }
 
-  async del(key: string | number): Promise<void> {
-    await this.delAsync(String(key));
+  async isHealthy(): Promise<boolean> {
+    try {
+      return (await this.client.ping()) === 'PONG';
+    } catch {
+      return false;
+    }
   }
 
-  async flush(): Promise<void> {
-    await this.flushAsync();
+  async get(key: string): Promise<string | null> {
+    return this.client.get(key);
+  }
+
+  async add(key: string, value: unknown): Promise<void> {
+    await this.client.set(key, JSON.stringify(value), { EX: TTL_SECONDS });
+  }
+
+  async del(key: string): Promise<void> {
+    await this.client.del(key);
   }
 }
 

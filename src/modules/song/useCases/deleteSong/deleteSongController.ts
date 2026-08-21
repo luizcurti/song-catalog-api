@@ -1,18 +1,14 @@
-import { container } from 'tsyringe';
-import { DeleteSongUseCase } from './deleteSongUseCase';
 import { Request, Response } from 'express';
 
-class DeleteSongController {
-  async handle(request: Request, response: Response) {
-    let { id } = request.params;
+import { DeleteSongUseCase } from './deleteSongUseCase';
 
-    const deleteSongUseCase = container.resolve(DeleteSongUseCase);
+export class DeleteSongController {
+  constructor(private readonly deleteSongUseCase: DeleteSongUseCase) {}
 
-    await deleteSongUseCase.execute({
-      id
-    });
+  handle = async (request: Request, response: Response): Promise<Response> => {
+    const { id } = request.params;
+
+    await this.deleteSongUseCase.execute(id);
     return response.status(204).send();
-  }
+  };
 }
-
-export { DeleteSongController };

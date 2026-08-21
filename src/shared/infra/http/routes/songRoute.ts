@@ -1,24 +1,21 @@
 import { Router } from 'express';
 
-import { CreateSongController } from '@modules/song/useCases/createSong/createSongController';
-import { DeleteSongController } from '@modules/song/useCases/deleteSong/deleteSongController';
-import { EditSongController } from '@modules/song/useCases/editSong/editSongController';
-import { ListAllSongController } from '@modules/song/useCases/listAllSong/listAllSongController';
-import { ListSongByIdController } from '@modules/song/useCases/listSongById/listSongByIdController';
+import {
+  createSongController,
+  deleteSongController,
+  editSongController,
+  listAllSongController,
+  listSongByIdController,
+} from '@modules/song/songModule';
+import { ensureAuthenticated } from '@shared/infra/http/middlewares/authentication';
 
 const songsRoutes = Router();
-const songsPrefix = `/`;
-
-const listAllSongController = new ListAllSongController();
-const listSongByIdController = new ListSongByIdController();
-const createSongController = new CreateSongController();
-const editSongController = new EditSongController();
-const deleteSongController = new DeleteSongController();
+const songsPrefix = '/';
 
 songsRoutes.get('/', listAllSongController.handle);
 songsRoutes.get('/:id', listSongByIdController.handle);
-songsRoutes.post('/', createSongController.handle);
-songsRoutes.put('/:id', editSongController.handle);
-songsRoutes.delete('/:id', deleteSongController.handle);
+songsRoutes.post('/', ensureAuthenticated, createSongController.handle);
+songsRoutes.put('/:id', ensureAuthenticated, editSongController.handle);
+songsRoutes.delete('/:id', ensureAuthenticated, deleteSongController.handle);
 
 export { songsRoutes, songsPrefix };

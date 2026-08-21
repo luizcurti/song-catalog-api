@@ -1,24 +1,34 @@
-name: Music Artist API CI
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
+
+env:
+  NODE_ENV: test
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+  DB_USER: root
+  DB_PASSWORD: root
+  DB_DATABASE: music
+  REDIS_HOST: 127.0.0.1
+  REDIS_PORT: 6379
+  X_API_KEY: ci-test-key-not-a-secret
 
 jobs:
   ci:
-    name: 🚀 CI Pipeline - Lint, Test, Build & Deploy
+    name: Lint, typecheck, test and build
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: music
-          MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
         options: >-
           --health-cmd="mysqladmin ping -h localhost -u root -proot"
           --health-interval=10s
@@ -26,7 +36,7 @@ jobs:
           --health-retries=10
         ports:
           - 3306:3306
-      
+
       redis:
         image: redis:alpine
         options: >-
@@ -36,141 +46,43 @@ jobs:
           --health-retries=10
         ports:
           - 6379:6379
-    
+
     steps:
-      # 📦 Setup
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: 🔧 Setup Node.js 22
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
-      
-      - name: 📦 Install dependencies
-        run: yarn install
-      
-      # 🔍 Code Quality
-      - name: 🔍 Run ESLint
-        run: yarn eslint
-      
-      # 🧪 Unit Tests
-      - name: 🧪 Run unit tests with coverage
-        run: yarn test
-        env:
-          NODE_ENV: test
-      
-      # 🏗️ Build
-      - name: 🏗️ Build TypeScript project
-        run: yarn build
-      
-      - name: ✅ Verify build output
-        run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build failed: dist folder not created"
-            exit 1
-          fi
-          echo "✅ Build successful: dist folder created"
-          ls -la dist/
-      
-      # 🗄️ Database Setup
-      - name: 🗄️ Setup database clients
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-client redis-tools
-      
-      - name: ⏳ Wait for services to be ready
-        run: |
-          echo "🔍 Testing MySQL connection..."
-          mysql_ready=false
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -P 3306 -u root --password=root --silent 2>/dev/null; then
-              echo "✅ MySQL is ready!"
-              mysql_ready=true
-              break
-            else
-              echo "⏰ MySQL not ready yet... attempt $i/30"
-              sleep 2
-            fi
-          done
-          
-          if [ "$mysql_ready" = false ]; then
-            echo "❌ MySQL failed to start after 60 seconds"
-            exit 1
-          fi
-          
-          echo "🔍 Testing Redis connection..."
-          redis_ready=false
-          for i in {1..30}; do
-            if redis-cli -h 127.0.0.1 -p 6379 ping > /dev/null 2>&1; then
-              echo "✅ Redis is ready!"
-              redis_ready=true
-              break
-            else
-              echo "⏰ Redis not ready yet... attempt $i/30"
-              sleep 2
-            fi
-          done
-          
-          if [ "$redis_ready" = false ]; then
-            echo "❌ Redis failed to start after 60 seconds"
-            exit 1
-          fi
-          
-          echo "🎉 All services are ready!"
-      
-      - name: 🔧 Setup environment variables
-        run: |
-          cat > .env << INNER_EOF
-          ENV=LOCAL
-          PORT=3005
-          DB_HOST=localhost
-          DB_PORT=3306
-          DB_USER=root
-          DB_PASSWORD=root
-          DB_DATABASE=music
-          REDIS_HOST=localhost
-          REDIS_PORT=6379
-          x_api_key=REDACTED-LEAKED-KEY
-          INNER_EOF
-          echo "✅ Environment variables configured"
-      
-      - name: 🗄️ Run database migrations
-        run: yarn typeorm
-        env:
-          NODE_ENV: development
-      
-      # 🚀 Production Test
-      - name: 🚀 Test production build
-        run: |
-          echo "🔄 Testing production build startup..."
-          timeout 15s yarn start &
-          sleep 10
-          
-          if pgrep -f "node.*dist/shared/infra/server.js"; then
-            echo "✅ Production build started successfully!"
-            pkill -f "node.*dist/shared/infra/server.js"
-          else
-            echo "❌ Production build failed to start"
-            exit 1
-          fi
-      
-      # 📊 Upload Coverage
-      - name: 📊 Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/lcov.info
-          flags: all-tests
-          name: music-artist-coverage
-        continue-on-error: true
-      
-      # 🎉 Success
-      - name: 🎉 All checks passed!
-        run: |
-          echo "🎉 All CI checks passed successfully!"
-          echo "✅ Linting: PASSED"
-          echo "✅ Unit Tests: PASSED" 
-          echo "✅ Build: PASSED"
-          echo "✅ Database: PASSED"
-          echo "✅ Production Test: PASSED"
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run eslint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Run database migrations
+        run: npm run typeorm
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify build output
+        run: test -d dist && ls dist

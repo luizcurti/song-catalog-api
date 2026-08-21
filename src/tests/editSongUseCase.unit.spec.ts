@@ -1,91 +1,79 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
-import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { EditSongUseCase } from '@modules/song/useCases/editSong/editSongUseCase';
-import cache from '@shared/infra/redis';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
-import { createClient } from "redis";
-type RedisClient = ReturnType<typeof createClient>;
+import { SongRepository } from '@modules/song/repositories/songRepository';
+import { EditSongUseCase } from '@modules/song/useCases/editSong/editSongUseCase';
+import { AppError } from '@errors/appError';
+import cache from '@shared/infra/redis';
 
 jest.mock('@shared/infra/redis', () => ({
-  add: jest.fn(),
-  get: jest.fn(),
-  del: jest.fn(),
+  __esModule: true,
+  default: { add: jest.fn(), get: jest.fn(), del: jest.fn() },
 }));
 
 describe('EditSongUseCase', () => {
+  let songRepository: jest.Mocked<SongRepository>;
   let editSongUseCase: EditSongUseCase;
-  let songRepository: jest.Mocked<ISongRepository>;
-
-  beforeAll(() => {
-    container.registerInstance<RedisClient>('RedisClient', {} as RedisClient);
-  });
 
   beforeEach(() => {
     songRepository = {
+      create: jest.fn(),
       findByID: jest.fn(),
+      findAll: jest.fn(),
+      findPaginated: jest.fn(),
       update: jest.fn(),
-    } as unknown as jest.Mocked<ISongRepository>;
-    
-    container.registerInstance<ISongRepository>('SongRepository', songRepository);
-
-    editSongUseCase = container.resolve(EditSongUseCase);
+      remove: jest.fn(),
+    };
+    editSongUseCase = new EditSongUseCase(songRepository);
   });
 
-  it('should edit a song and update cache', async () => {
-    const song = {
-      id: uuidv4(),
-      name: 'Old Song',
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('updates an existing song and refreshes the cache', async () => {
+    const id = randomUUID();
+    const existingSong = {
+      id,
+      name: 'Old Name',
       artist: 'Old Artist',
-      imageurl: 'Old Image URL',
-      notes: 'Old Notes',
+      imageurl: 'https://example.com/old.jpg',
+      notes: 'Old notes',
       popularity: 5,
       created_at: new Date(),
       updated_at: new Date(),
     };
-    const updatedSong = {
-      ...song,
-      name: 'New Song',
+    const input = {
+      name: 'New Name',
       artist: 'New Artist',
-      imageurl: 'New Image URL',
-      notes: 'New Notes',
-      popularity: 7,
+      imageurl: 'https://example.com/new.jpg',
+      notes: 'New notes',
+      popularity: 9,
     };
+    const updatedSong = { ...existingSong, ...input };
 
-    songRepository.findByID.mockResolvedValueOnce(song);
+    songRepository.findByID.mockResolvedValueOnce(existingSong);
     songRepository.update.mockResolvedValueOnce(updatedSong);
 
-    const result = await editSongUseCase.execute({
-      id: song.id,
-      name: updatedSong.name,
-      artist: updatedSong.artist,
-      imageurl: updatedSong.imageurl,
-      notes: updatedSong.notes,
-      popularity: updatedSong.popularity,
-    });
+    const result = await editSongUseCase.execute(id, input);
 
-    expect(songRepository.findByID).toHaveBeenCalledWith(song.id);
-    expect(songRepository.update).toHaveBeenCalledWith(updatedSong);
-    expect(cache.del).toHaveBeenCalledWith(song.id);
-    expect(cache.add).toHaveBeenCalledWith(updatedSong.id, updatedSong);
+    expect(songRepository.update).toHaveBeenCalledWith(expect.objectContaining(input));
     expect(result).toEqual(updatedSong);
+    expect(cache.del).toHaveBeenCalledWith(id);
+    expect(cache.add).toHaveBeenCalledWith(updatedSong.id, updatedSong);
   });
 
-  it('should throw an error if the song does not exist', async () => {
-    const songID = 'song-id';
+  it('throws a not-found error when the song does not exist', async () => {
     songRepository.findByID.mockResolvedValueOnce(null);
 
     await expect(
-      editSongUseCase.execute({
-        id: songID,
-        name: 'New Song',
+      editSongUseCase.execute(randomUUID(), {
+        name: 'New Name',
         artist: 'New Artist',
-        imageurl: 'New Image URL',
-        notes: 'New Notes',
-        popularity: 7,
-      })
+        imageurl: 'https://example.com/new.jpg',
+        notes: 'New notes',
+        popularity: 9,
+      }),
     ).rejects.toEqual(new AppError('Song does not exist', 404, 'Not Found'));
+    expect(songRepository.update).not.toHaveBeenCalled();
   });
 });

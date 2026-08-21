@@ -1,65 +1,49 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
+import { randomUUID } from 'crypto';
+
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import { CreateSongUseCase } from '@modules/song/useCases/createSong/createSongUseCase';
 import cache from '@shared/infra/redis';
 
-import { createClient } from "redis";
-type RedisClient = ReturnType<typeof createClient>;
-
 jest.mock('@shared/infra/redis', () => ({
-  add: jest.fn(),
-  get: jest.fn(),
-  del: jest.fn(),
+  __esModule: true,
+  default: { add: jest.fn(), get: jest.fn(), del: jest.fn() },
 }));
 
 describe('CreateSongUseCase', () => {
-  let songRepository: jest.Mocked<ISongRepository>;
+  let songRepository: jest.Mocked<SongRepository>;
   let createSongUseCase: CreateSongUseCase;
-
-  beforeAll(() => {
-    container.registerInstance<RedisClient>('RedisClient', {} as RedisClient);
-  });
 
   beforeEach(() => {
     songRepository = {
       create: jest.fn(),
-    } as unknown as jest.Mocked<ISongRepository>;
-
-    container.registerInstance<ISongRepository>('SongRepository', songRepository);
-
-    createSongUseCase = container.resolve(CreateSongUseCase);
+      findByID: jest.fn(),
+      findAll: jest.fn(),
+      findPaginated: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
+    createSongUseCase = new CreateSongUseCase(songRepository);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should create a new song', async () => {
-
-    const songInput = {
+  it('creates a song and stores it in the cache', async () => {
+    const input = {
       name: 'Song Name',
       artist: 'Song Artist',
       imageurl: 'https://example.com/song-image.jpg',
       notes: 'Song Notes',
       popularity: 10,
     };
+    const song = { id: randomUUID(), ...input, created_at: new Date(), updated_at: new Date() };
+    songRepository.create.mockResolvedValueOnce(song);
 
-    const mockedSong = { id: expect.any(String), ...songInput, created_at: new Date(), updated_at: new Date() };
-    songRepository.create.mockResolvedValueOnce(mockedSong);
+    const result = await createSongUseCase.execute(input);
 
-    const createdSong = await createSongUseCase.execute(songInput);
-
-    expect(createdSong).toEqual({
-      id: expect.any(String),
-      name: 'Song Name',
-      artist: 'Song Artist',
-      imageurl: 'https://example.com/song-image.jpg',
-      notes: 'Song Notes',
-      popularity: 10,
-      created_at: expect.any(Date),
-      updated_at: expect.any(Date),
-    });
-    expect(cache.add).toHaveBeenCalledWith(createdSong.id, createdSong);
+    expect(songRepository.create).toHaveBeenCalledWith(input);
+    expect(result).toEqual(song);
+    expect(cache.add).toHaveBeenCalledWith(song.id, song);
   });
 });

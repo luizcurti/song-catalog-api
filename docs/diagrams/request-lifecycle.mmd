@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant C as Client
+    participant Mid as Middlewares
+    participant Ctrl as CreateSongController
+    participant UC as CreateSongUseCase
+    participant Repo as TypeOrmSongRepository
+    participant DB as MySQL
+    participant Cache as RedisCache
+
+    C->>Mid: POST /api/music (x-api-key, body)
+    Mid->>Mid: rate limit check
+    Mid->>Ctrl: ensureAuthenticated passed
+    Ctrl->>Ctrl: songSchema.validate(body)
+    alt validation fails
+        Ctrl-->>C: 400 VALIDATIONS_FAILED
+    else validation passes
+        Ctrl->>UC: execute(input)
+        UC->>Repo: create(input)
+        Repo->>DB: INSERT INTO songs ...
+        DB-->>Repo: song row (id, timestamps)
+        Repo-->>UC: Song
+        UC->>Cache: add(song.id, song)
+        UC-->>Ctrl: Song
+        Ctrl-->>C: 201 Created
+    end

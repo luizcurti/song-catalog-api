@@ -1,23 +1,15 @@
-import { inject, injectable } from 'tsyringe';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import cache from '@shared/infra/redis';
-import { IRequest, IResponse } from './iCreateSongDTO';
 
-@injectable()
-class CreateSongUseCase {
-  constructor(
-    @inject('SongRepository')
-    private songRepository: ISongRepository
-  ) {}
+import { Song } from '../../infra/typeorm/entities/Song';
+import { SongInput } from '../songSchema';
 
-  async execute({ name, artist, imageurl, notes, popularity }: IRequest): Promise<IResponse> {
-    const song = await this.songRepository.create({ name, artist, imageurl, notes, popularity });
+export class CreateSongUseCase {
+  constructor(private readonly songRepository: SongRepository) {}
 
-    if (song.id)
-      await cache.add(song.id, song);
-
+  async execute(input: SongInput): Promise<Song> {
+    const song = await this.songRepository.create(input);
+    await cache.add(song.id, song);
     return song;
   }
 }
-
-export { CreateSongUseCase };

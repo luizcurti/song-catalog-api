@@ -1,72 +1,61 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
-import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { DeleteSongUseCase } from '@modules/song/useCases/deleteSong/deleteSongUseCase';
-import cache from '@shared/infra/redis';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
-import { createClient } from "redis";
-type RedisClient = ReturnType<typeof createClient>;
+import { SongRepository } from '@modules/song/repositories/songRepository';
+import { DeleteSongUseCase } from '@modules/song/useCases/deleteSong/deleteSongUseCase';
+import { AppError } from '@errors/appError';
+import cache from '@shared/infra/redis';
 
 jest.mock('@shared/infra/redis', () => ({
-  add: jest.fn(),
-  get: jest.fn(),
-  del: jest.fn(),
+  __esModule: true,
+  default: { add: jest.fn(), get: jest.fn(), del: jest.fn() },
 }));
 
 describe('DeleteSongUseCase', () => {
-  let songRepository: jest.Mocked<ISongRepository>;
+  let songRepository: jest.Mocked<SongRepository>;
   let deleteSongUseCase: DeleteSongUseCase;
-
-  beforeAll(() => {
-    container.registerInstance<RedisClient>('RedisClient', {} as RedisClient);
-  });
 
   beforeEach(() => {
     songRepository = {
+      create: jest.fn(),
       findByID: jest.fn(),
+      findAll: jest.fn(),
+      findPaginated: jest.fn(),
+      update: jest.fn(),
       remove: jest.fn(),
-    } as unknown as jest.Mocked<ISongRepository>;
-
-    container.registerInstance<ISongRepository>('SongRepository', songRepository);
-
-    deleteSongUseCase = container.resolve(DeleteSongUseCase);
+    };
+    deleteSongUseCase = new DeleteSongUseCase(songRepository);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should delete a song and remove from cache', async () => {
+  it('deletes an existing song and evicts it from the cache', async () => {
+    const id = randomUUID();
     const song = {
-      id: uuidv4(),
+      id,
       name: 'Song Name',
       artist: 'Song Artist',
-      imageurl: 'https://example.com/song-image.jpg',
-      notes: 'Song Notes',
-      popularity: 10,
+      imageurl: 'https://example.com/song.jpg',
+      notes: 'Notes',
+      popularity: 5,
       created_at: new Date(),
       updated_at: new Date(),
     };
-    const mockedSong = { ...song };
+    songRepository.findByID.mockResolvedValueOnce(song);
 
-    songRepository.findByID.mockResolvedValueOnce(mockedSong);
+    await deleteSongUseCase.execute(id);
 
-    const result = await deleteSongUseCase.execute({ id: song.id });
-
-    expect(songRepository.findByID).toHaveBeenCalledWith(song.id);
     expect(songRepository.remove).toHaveBeenCalledWith(song);
-    expect(cache.del).toHaveBeenCalledWith(song.id);
-    expect(result).toBe('Deleted');
+    expect(cache.del).toHaveBeenCalledWith(id);
   });
 
-  it('should throw an error if the song does not exist', async () => {
-    const songID = 'song-id';
+  it('throws a not-found error when the song does not exist', async () => {
     songRepository.findByID.mockResolvedValueOnce(null);
 
-    await expect(deleteSongUseCase.execute({ id: songID })).rejects.toEqual(
-      new AppError('Song does not exist', 404, 'Not Found')
+    await expect(deleteSongUseCase.execute(randomUUID())).rejects.toEqual(
+      new AppError('Song does not exist', 404, 'Not Found'),
     );
+    expect(songRepository.remove).not.toHaveBeenCalled();
   });
 });

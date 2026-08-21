@@ -1,140 +1,119 @@
-/**
- * Testes E2E - Song API
- *
- * Pré-requisitos: docker compose up (MySQL, Redis e app rodando em localhost:3005)
- * Base URL: http://localhost:3005/api/music
- */
+import request from 'supertest';
 
-import axios, { AxiosError } from 'axios';
+import { App } from '@shared/infra/app';
 
-const BASE_URL = 'http://localhost:3005/api/music';
+describe('Song API (e2e)', () => {
+  const app = new App();
+  const apiKey = process.env.X_API_KEY as string;
 
-interface Song {
-  id: string;
-  name: string;
-  artist: string;
-  imageurl: string;
-  notes: string;
-  popularity: number;
-  created_at: string;
-  updated_at: string;
-}
+  const validSongPayload = {
+    name: 'E2E Test Song',
+    artist: 'E2E Artist',
+    imageurl: 'https://example.com/image.jpg',
+    notes: 'E2E test notes',
+    popularity: 8,
+  };
 
-const validSongPayload = {
-  name: 'E2E Test Song',
-  artist: 'E2E Artist',
-  imageurl: 'https://example.com/image.jpg',
-  notes: 'E2E test notes',
-  popularity: 8,
-};
-
-describe('Song API - E2E', () => {
   let createdSongId: string;
 
-  // ─── POST /api/music ──────────────────────────────────────────────────────
+  beforeAll(async () => {
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.shutdown();
+  });
 
   describe('POST /api/music (create song)', () => {
-    it('should create a song and return 201 with the created object', async () => {
-      const response = await axios.post<Song>(BASE_URL, validSongPayload);
+    it('creates a song and returns 201 with the created object', async () => {
+      const response = await request(app.server).post('/api/music').set('x-api-key', apiKey).send(validSongPayload);
 
       expect(response.status).toBe(201);
-      expect(response.data).toMatchObject({
-        name: validSongPayload.name,
-        artist: validSongPayload.artist,
-        imageurl: validSongPayload.imageurl,
-        notes: validSongPayload.notes,
-        popularity: validSongPayload.popularity,
-      });
-      expect(response.data.id).toBeDefined();
-      expect(response.data.created_at).toBeDefined();
-      expect(response.data.updated_at).toBeDefined();
+      expect(response.body).toMatchObject(validSongPayload);
+      expect(response.body.id).toBeDefined();
+      expect(response.body.created_at).toBeDefined();
+      expect(response.body.updated_at).toBeDefined();
 
-      createdSongId = response.data.id;
+      createdSongId = response.body.id;
     });
 
-    it('should return 400 when name is missing', async () => {
-      try {
-        await axios.post(BASE_URL, {
-          artist: 'Artist',
-          imageurl: 'https://example.com/img.jpg',
-          notes: 'Some notes',
-          popularity: 5,
-        });
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(400);
-        expect(error.response?.data.type).toBe('VALIDATIONS_FAILED');
-      }
+    it('returns 401 without an API key', async () => {
+      const response = await request(app.server).post('/api/music').send(validSongPayload);
+
+      expect(response.status).toBe(401);
     });
 
-    it('should return 400 when popularity is out of range (> 10)', async () => {
-      try {
-        await axios.post(BASE_URL, { ...validSongPayload, popularity: 11 });
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(400);
-        expect(error.response?.data.type).toBe('VALIDATIONS_FAILED');
-      }
+    it('returns 400 when name is missing', async () => {
+      const { name, ...payloadWithoutName } = validSongPayload;
+      void name;
+
+      const response = await request(app.server).post('/api/music').set('x-api-key', apiKey).send(payloadWithoutName);
+
+      expect(response.status).toBe(400);
+      expect(response.body.type).toBe('VALIDATIONS_FAILED');
     });
 
-    it('should return 400 when popularity is below 0', async () => {
-      try {
-        await axios.post(BASE_URL, { ...validSongPayload, popularity: -1 });
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(400);
-        expect(error.response?.data.type).toBe('VALIDATIONS_FAILED');
-      }
+    it('returns 400 when popularity is out of range', async () => {
+      const response = await request(app.server)
+        .post('/api/music')
+        .set('x-api-key', apiKey)
+        .send({ ...validSongPayload, popularity: 11 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.type).toBe('VALIDATIONS_FAILED');
     });
   });
-
-  // ─── GET /api/music ───────────────────────────────────────────────────────
 
   describe('GET /api/music (list all songs)', () => {
-    it('should return 200 with an array of songs', async () => {
-      const response = await axios.get<Song[]>(BASE_URL);
+    it('returns 200 with a paginated page that includes the created song', async () => {
+      const response = await request(app.server).get('/api/music');
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.data)).toBe(true);
-      expect(response.data.length).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.meta).toMatchObject({ page: 1, limit: 20 });
+      expect(response.body.data.some((song: { id: string }) => song.id === createdSongId)).toBe(true);
     });
 
-    it('should include the previously created song in the list', async () => {
-      const response = await axios.get<Song[]>(BASE_URL);
+    it('filters by artist', async () => {
+      const response = await request(app.server).get('/api/music').query({ artist: validSongPayload.artist });
 
-      const found = response.data.find((s) => s.id === createdSongId);
-      expect(found).toBeDefined();
-      expect(found?.name).toBe(validSongPayload.name);
+      expect(response.status).toBe(200);
+      expect(response.body.data.every((song: { artist: string }) => song.artist === validSongPayload.artist)).toBe(
+        true,
+      );
+    });
+
+    it('respects the limit query param', async () => {
+      const response = await request(app.server).get('/api/music').query({ limit: 1 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBeLessThanOrEqual(1);
+      expect(response.body.meta.limit).toBe(1);
+    });
+
+    it('returns 400 for an out-of-range limit', async () => {
+      const response = await request(app.server).get('/api/music').query({ limit: 1000 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.type).toBe('VALIDATIONS_FAILED');
     });
   });
 
-  // ─── GET /api/music/:id ───────────────────────────────────────────────────
-
-  describe('GET /api/music/:id (get song by ID)', () => {
-    it('should return 200 with the correct song', async () => {
-      const response = await axios.get<Song>(`${BASE_URL}/${createdSongId}`);
+  describe('GET /api/music/:id (get song by id)', () => {
+    it('returns 200 with the correct song', async () => {
+      const response = await request(app.server).get(`/api/music/${createdSongId}`);
 
       expect(response.status).toBe(200);
-      expect(response.data.id).toBe(createdSongId);
-      expect(response.data.name).toBe(validSongPayload.name);
+      expect(response.body.id).toBe(createdSongId);
     });
 
-    it('should return 404 when song does not exist', async () => {
-      try {
-        await axios.get(`${BASE_URL}/non-existent-id-000`);
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(404);
-        expect(error.response?.data.type).toBe('Not Found');
-      }
+    it('returns 404 when the song does not exist', async () => {
+      const response = await request(app.server).get('/api/music/00000000-0000-0000-0000-000000000000');
+
+      expect(response.status).toBe(404);
+      expect(response.body.type).toBe('Not Found');
     });
   });
-
-  // ─── PUT /api/music/:id ───────────────────────────────────────────────────
 
   describe('PUT /api/music/:id (edit song)', () => {
     const updatedPayload = {
@@ -145,80 +124,52 @@ describe('Song API - E2E', () => {
       popularity: 5,
     };
 
-    it('should return 200 with the updated song', async () => {
-      const response = await axios.put<Song>(
-        `${BASE_URL}/${createdSongId}`,
-        updatedPayload,
-      );
+    it('returns 200 with the updated song', async () => {
+      const response = await request(app.server)
+        .put(`/api/music/${createdSongId}`)
+        .set('x-api-key', apiKey)
+        .send(updatedPayload);
 
       expect(response.status).toBe(200);
-      expect(response.data.id).toBe(createdSongId);
-      expect(response.data.name).toBe(updatedPayload.name);
-      expect(response.data.artist).toBe(updatedPayload.artist);
-      expect(response.data.popularity).toBe(updatedPayload.popularity);
+      expect(response.body).toMatchObject(updatedPayload);
     });
 
-    it('should persist the update (GET confirms new data)', async () => {
-      const response = await axios.get<Song>(`${BASE_URL}/${createdSongId}`);
+    it('persists the update', async () => {
+      const response = await request(app.server).get(`/api/music/${createdSongId}`);
 
-      expect(response.data.name).toBe(updatedPayload.name);
-      expect(response.data.artist).toBe(updatedPayload.artist);
+      expect(response.body).toMatchObject(updatedPayload);
     });
 
-    it('should return 404 when trying to edit a non-existent song', async () => {
-      try {
-        await axios.put(`${BASE_URL}/non-existent-id-000`, updatedPayload);
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(404);
-        expect(error.response?.data.type).toBe('Not Found');
-      }
+    it('returns 404 when editing a non-existent song', async () => {
+      const response = await request(app.server)
+        .put('/api/music/00000000-0000-0000-0000-000000000000')
+        .set('x-api-key', apiKey)
+        .send(updatedPayload);
+
+      expect(response.status).toBe(404);
     });
   });
 
-  // ─── DELETE /api/music/:id ────────────────────────────────────────────────
-
   describe('DELETE /api/music/:id (delete song)', () => {
-    it('should return 204 on successful deletion', async () => {
-      const response = await axios.delete(`${BASE_URL}/${createdSongId}`);
+    it('returns 204 on successful deletion', async () => {
+      const response = await request(app.server).delete(`/api/music/${createdSongId}`).set('x-api-key', apiKey);
 
       expect(response.status).toBe(204);
     });
 
-    it('should return 404 when GET is called after deletion', async () => {
-      try {
-        await axios.get(`${BASE_URL}/${createdSongId}`);
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(404);
-      }
-    });
+    it('returns 404 when the song is already deleted', async () => {
+      const response = await request(app.server).delete(`/api/music/${createdSongId}`).set('x-api-key', apiKey);
 
-    it('should return 404 when trying to delete an already deleted song', async () => {
-      try {
-        await axios.delete(`${BASE_URL}/${createdSongId}`);
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError<{ message: string; type: string }>;
-        expect(error.response?.status).toBe(404);
-        expect(error.response?.data.type).toBe('Not Found');
-      }
+      expect(response.status).toBe(404);
+      expect(response.body.type).toBe('Not Found');
     });
   });
 
-  // ─── 404 para rota inexistente ────────────────────────────────────────────
+  describe('unknown routes', () => {
+    it('returns 404', async () => {
+      const response = await request(app.server).get('/api/does-not-exist');
 
-  describe('Not Found middleware', () => {
-    it('should return 404 for unknown routes', async () => {
-      try {
-        await axios.get('http://localhost:3005/api/nonexistent');
-        fail('Should have thrown an error');
-      } catch (err) {
-        const error = err as AxiosError;
-        expect(error.response?.status).toBe(404);
-      }
+      expect(response.status).toBe(404);
     });
   });
 });

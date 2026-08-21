@@ -2,18 +2,11 @@ import parserTs from '@typescript-eslint/parser';
 import pluginTs from '@typescript-eslint/eslint-plugin';
 import pluginJest from 'eslint-plugin-jest';
 import pluginImport from 'eslint-plugin-import';
+import configPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores([
-    '**/node_modules/',
-    '**/dist/',
-    '**/coverage/',
-    '**/build/',
-    '**/models/',
-    '**/config/',
-    '**/errors/'
-  ]),
+  globalIgnores(['**/node_modules/', '**/dist/', '**/coverage/', '**/build/']),
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -21,24 +14,24 @@ export default defineConfig([
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
-        project: './tsconfig.json'
+        project: './tsconfig.json',
       },
       globals: {
-        NodeJS: 'readonly'
-      }
+        NodeJS: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': pluginTs,
       jest: pluginJest,
-      import: pluginImport
+      import: pluginImport,
     },
     rules: {
-      'no-console': 'off',
+      ...configPrettier.rules,
+      'no-console': 'error',
       'class-methods-use-this': 'off',
       'import/first': 'off',
       'no-param-reassign': 'off',
       'no-restricted-syntax': 'off',
-      'max-len': ['error', { code: 200 }],
       'no-promise-executor-return': 'off',
       'jest/no-conditional-expect': 'off',
       'import/prefer-default-export': 'off',
@@ -48,16 +41,16 @@ export default defineConfig([
         'ignorePackages',
         {
           ts: 'never',
-          js: 'never'
-        }
-      ]
+          js: 'never',
+        },
+      ],
     },
     settings: {
       'import/resolver': {
         node: {
-          extensions: ['.js', '.ts']
-        }
-      }
-    }
-  }
+          extensions: ['.js', '.ts'],
+        },
+      },
+    },
+  },
 ]);

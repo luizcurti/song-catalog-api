@@ -1,37 +1,27 @@
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { inject, injectable } from 'tsyringe';
-import  cache from '@shared/infra/redis';
-import { IRequest, IResponse } from './iEditSongDTO';
+import cache from '@shared/infra/redis';
 
-@injectable()
-class EditSongUseCase {
-  constructor(
-    @inject('SongRepository')
-    private songRepository: ISongRepository
-  ) {}
+import { Song } from '../../infra/typeorm/entities/Song';
+import { SongInput } from '../songSchema';
 
-  async execute({id, name, artist, imageurl, notes, popularity}: IRequest): Promise<IResponse> {
+export class EditSongUseCase {
+  constructor(private readonly songRepository: SongRepository) {}
+
+  async execute(id: string, input: SongInput): Promise<Song> {
     const song = await this.songRepository.findByID(id);
 
-    if (!song) 
+    if (!song) {
       throw new AppError('Song does not exist', 404, 'Not Found');
-
-    song.name = name;
-    song.artist = artist;
-    song.imageurl = imageurl;
-    song.notes = notes;
-    song.popularity = popularity;
-
-    const songUpdated = await this.songRepository.update(song);
-
-    if (songUpdated) {
-      await cache.del(id);
-      await cache.add(song.id, songUpdated);
     }
 
-    return songUpdated;
+    Object.assign(song, input);
+
+    const updatedSong = await this.songRepository.update(song);
+
+    await cache.del(id);
+    await cache.add(updatedSong.id, updatedSong);
+
+    return updatedSong;
   }
 }
-
-export { EditSongUseCase };

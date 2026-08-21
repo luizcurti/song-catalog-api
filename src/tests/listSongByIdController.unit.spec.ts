@@ -1,66 +1,37 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
+import { randomUUID } from 'crypto';
 import { Request, Response } from 'express';
-import { ListSongByIdUseCase } from '@modules/song/useCases/listSongById/listSongByIdUseCase';
-import { ListSongByIdController } from '@modules/song/useCases/listSongById/listSongByIdController';
-import { v4 as uuidv4 } from 'uuid';
 
-jest.mock('tsyringe');
-jest.mock('@modules/song/useCases/listSongById/listSongByIdUseCase', () => {
-  return {
-    ListSongByIdUseCase: jest.fn().mockImplementation(() => {
-      return {
-        execute: jest.fn()
-      }
-    })
-  }
-});
+import { ListSongByIdController } from '@modules/song/useCases/listSongById/listSongByIdController';
+import { ListSongByIdUseCase } from '@modules/song/useCases/listSongById/listSongByIdUseCase';
 
 describe('ListSongByIdController', () => {
-    let listSongByIdController: ListSongByIdController;
-    let listSongByIdUseCase: ListSongByIdUseCase;
-    let request: Request;
-    let response = {
+  let listSongByIdUseCase: jest.Mocked<ListSongByIdUseCase>;
+  let listSongByIdController: ListSongByIdController;
+  let response: Response;
+
+  beforeEach(() => {
+    listSongByIdUseCase = { execute: jest.fn() } as unknown as jest.Mocked<ListSongByIdUseCase>;
+    listSongByIdController = new ListSongByIdController(listSongByIdUseCase);
+    response = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     } as unknown as Response;
+  });
 
-    var song = {
-        id: expect.any(String),
-        name: 'Song Name',
-        artist: 'Song Artist',
-        imageurl: 'https://example.com/song-image.jpg',
-        notes: 'Song Notes',
-        popularity: 10,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-    };
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-    beforeEach(() => {
-        request = {} as Request;
-        listSongByIdController = new ListSongByIdController();
-    
-        listSongByIdUseCase = {
-          execute: jest.fn(),
-        } as unknown as jest.Mocked<ListSongByIdUseCase>;
-    });
-    
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-  
-    it('should return a song by ID', async () => {
-        const id =  String(uuidv4());
+  it('returns the song with status 200', async () => {
+    const id = randomUUID();
+    const song = { id } as never;
+    listSongByIdUseCase.execute.mockResolvedValueOnce(song);
 
-        const request = { params: { id } }; 
+    const request = { params: { id } } as unknown as Request;
+    await listSongByIdController.handle(request, response);
 
-        jest.spyOn(container, 'resolve').mockReturnValue(listSongByIdUseCase);
-        jest.spyOn(listSongByIdUseCase, 'execute').mockReturnValue(Promise.resolve(song));
-
-        await listSongByIdController.handle(request as unknown as Request, response as Response);
-
-        expect(listSongByIdUseCase.execute).toHaveBeenCalledWith({ id });
-        expect(response.status).toHaveBeenCalledWith(200);
-        expect(response.json).toHaveBeenCalledWith(song);
-    });
+    expect(listSongByIdUseCase.execute).toHaveBeenCalledWith(id);
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(song);
+  });
 });

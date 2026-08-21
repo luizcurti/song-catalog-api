@@ -1,18 +1,15 @@
-import "reflect-metadata";
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { inject, injectable } from 'tsyringe';
-import { IResponse } from '../listSongById/iListSongDTO';
+import { SongRepository } from '@modules/song/repositories/songRepository';
+import { paginate, Paginated } from '@shared/generic/pagination';
 
-@injectable()
-class ListAllSongUseCase {
-  constructor(
-    @inject('SongRepository')
-    private songRepository: ISongRepository
-  ) {}
+import { Song } from '../../infra/typeorm/entities/Song';
+import { ListSongsQuery } from './listSongsQuery';
 
-  async execute(): Promise<IResponse[]> {
-    return await this.songRepository.findAll();
+export class ListAllSongUseCase {
+  constructor(private readonly songRepository: SongRepository) {}
+
+  async execute(query: ListSongsQuery): Promise<Paginated<Song>> {
+    const { data, total } = await this.songRepository.findPaginated(query);
+
+    return paginate(data, total, query.page, query.limit);
   }
 }
-
-export { ListAllSongUseCase };

@@ -1,27 +1,28 @@
-interface IConfig {
-  database: {
-    type: string;
-    port: string;
-    host: string;
-    username: string;
-    password: string;
-    names: {
-      music: string;
-    }
-  };
-}
+import './env';
+import { validateEnv } from './envSchema';
+
+const env = validateEnv(process.env);
 
 const config = {
   database: {
-    type: 'mysql',
-    port: process.env.DB_PORT,
-    host: process.env.DB_HOST,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    names: {
-      music: process.env.DB_DATABASE,
-    },
+    type: 'mysql' as const,
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    username: env.DB_USER,
+    password: env.DB_PASSWORD,
+    name: env.DB_DATABASE,
   },
-} as IConfig;
+  redis: {
+    host: env.REDIS_HOST,
+    port: env.REDIS_PORT,
+  },
+  server: {
+    port: env.PORT,
+  },
+  auth: {
+    apiKey: env.X_API_KEY,
+  },
+} as const;
 
+export type Config = typeof config;
 export default config;

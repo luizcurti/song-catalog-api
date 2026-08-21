@@ -1,0 +1,26 @@
+graph TD
+    Client([Client])
+
+    subgraph Express["Express app"]
+        MW["Middlewares<br/>helmet . cors . rate limit . pino-http"]
+        Auth["ensureAuthenticated<br/>(write routes only)"]
+        Controller["Controller<br/>validates request with Yup"]
+    end
+
+    subgraph Domain["Use case layer"]
+        UseCase["Use case<br/>(CreateSong / EditSong / DeleteSong / ListAllSong / ListSongById)"]
+        RepoInterface["SongRepository<br/>(interface)"]
+    end
+
+    subgraph Infra["Infrastructure"]
+        TypeOrmRepo["TypeOrmSongRepository"]
+        MySQL[("MySQL")]
+        Cache["RedisCache"]
+        Redis[("Redis")]
+    end
+
+    Client --> MW --> Auth --> Controller --> UseCase
+    UseCase --> RepoInterface
+    RepoInterface -. implemented by .-> TypeOrmRepo
+    TypeOrmRepo --> MySQL
+    UseCase --> Cache --> Redis

@@ -1,0 +1,26 @@
+graph LR
+    Root["music-artist/"]
+
+    Root --> Docs["docs/<br/>architecture diagrams"]
+    Root --> Src["src/"]
+    Root --> Config1["package.json . tsconfig.json<br/>jest.config.cjs . eslint.config.mjs<br/>docker-compose.yml"]
+
+    Src --> ConfigDir["config/<br/>env loading, env validation,<br/>typed app config"]
+    Src --> Errors["errors/<br/>AppError"]
+    Src --> Modules["modules/song/"]
+    Src --> Shared["shared/"]
+    Src --> Tests["tests/<br/>unit . integration . e2e specs"]
+
+    Modules --> ModInfra["infra/typeorm/<br/>entity + repository impl"]
+    Modules --> ModRepo["repositories/<br/>SongRepository interface"]
+    Modules --> ModUseCases["useCases/<br/>createSong . editSong . deleteSong<br/>listAllSong . listSongById"]
+    Modules --> ModComposition["songModule.ts<br/>composition root"]
+
+    Shared --> SharedGeneric["generic/<br/>CrudRepository interface . pagination"]
+    Shared --> SharedInfra["infra/"]
+
+    SharedInfra --> App["app.ts . server.ts"]
+    SharedInfra --> Database["database/<br/>TypeORM DataSource . migrations"]
+    SharedInfra --> Http["http/<br/>routes . middlewares . OpenAPI doc"]
+    SharedInfra --> Logger["logger/<br/>pino"]
+    SharedInfra --> Redis["redis/<br/>cache client"]

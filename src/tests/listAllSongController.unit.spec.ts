@@ -1,96 +1,54 @@
-import "reflect-metadata";
-import { container } from 'tsyringe';
 import { Request, Response } from 'express';
+
+import { AppError } from '@errors/appError';
 import { ListAllSongController } from '@modules/song/useCases/listAllSong/listAllSongController';
 import { ListAllSongUseCase } from '@modules/song/useCases/listAllSong/listAllSongUseCase';
-import { v4 as uuidv4 } from 'uuid';
-
-jest.mock('tsyringe');
-jest.mock('@modules/song/useCases/listAllSong/listAllSongUseCase', () => {
-  return {
-    ListAllSongUseCase: jest.fn().mockImplementation(() => {
-      return {
-        execute: jest.fn()
-      }
-    })
-  }
-});
 
 describe('ListAllSongController', () => {
+  let listAllSongUseCase: jest.Mocked<ListAllSongUseCase>;
   let listAllSongController: ListAllSongController;
-  let listAllSongUseCase: ListAllSongUseCase;
-  let request: Request;
-  let response = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn().mockReturnThis(),
-  } as unknown as Response;
-
-  var songs = [
-    {
-      id: String(uuidv4()),
-      name: 'Song Name',
-      artist: 'Song Artist',
-      imageurl: 'https://example.com/song-image.jpg',
-      notes: 'Song Notes',
-      popularity: 10,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-    {
-      id: String(uuidv4()),
-      name: 'Song Name 2',
-      artist: 'Song Artist 2',
-      imageurl: 'https://example.com/song-image2.jpg',
-      notes: 'Song Notes 2',
-      popularity: 7,
-      created_at: new Date(),
-      updated_at: new Date(),
-    }
-  ];
+  let response: Response;
 
   beforeEach(() => {
-    request = {} as Request;
-    listAllSongController = new ListAllSongController();
-
-    listAllSongUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<ListAllSongUseCase>;
+    listAllSongUseCase = { execute: jest.fn() } as unknown as jest.Mocked<ListAllSongUseCase>;
+    listAllSongController = new ListAllSongController(listAllSongUseCase);
+    response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as Response;
   });
-  
+
   afterEach(() => {
     jest.clearAllMocks();
   });
-  
-  it('should list all songs successfully', async () => {
-    const songsResponse = [
-      {
-        id: expect.any(String),
-        name: 'Song Name',
-        artist: 'Song Artist',
-        imageurl: 'https://example.com/song-image.jpg',
-        notes: 'Song Notes',
-        popularity: 10,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      },
-      {
-        id: expect.any(String),
-        name: 'Song Name 2',
-        artist: 'Song Artist 2',
-        imageurl: 'https://example.com/song-image2.jpg',
-        notes: 'Song Notes 2',
-        popularity: 7,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      }
-    ];
 
-    jest.spyOn(container, 'resolve').mockReturnValue(listAllSongUseCase);
-    jest.spyOn(listAllSongUseCase, 'execute').mockReturnValue(Promise.resolve(songs));
-    
+  it('applies default pagination when no query params are given', async () => {
+    const page = { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } } as never;
+    listAllSongUseCase.execute.mockResolvedValueOnce(page);
+
+    const request = { query: {} } as unknown as Request;
     await listAllSongController.handle(request, response);
 
+    expect(listAllSongUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 20 }));
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(songsResponse);
+    expect(response.json).toHaveBeenCalledWith(page);
+  });
+
+  it('parses and forwards filter query params', async () => {
+    listAllSongUseCase.execute.mockResolvedValueOnce({} as never);
+
+    const request = { query: { page: '2', limit: '5', artist: 'Queen', popularityMin: '3' } } as unknown as Request;
+    await listAllSongController.handle(request, response);
+
+    expect(listAllSongUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, limit: 5, artist: 'Queen', popularityMin: 3 }),
+    );
+  });
+
+  it('throws a validation error for an invalid query param', async () => {
+    const request = { query: { limit: '1000' } } as unknown as Request;
+
+    await expect(listAllSongController.handle(request, response)).rejects.toBeInstanceOf(AppError);
+    expect(listAllSongUseCase.execute).not.toHaveBeenCalled();
   });
 });

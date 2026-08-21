@@ -1,4 +1,5 @@
 import { App } from './app';
+import { logger } from './logger';
 
 (async () => {
   const app = new App();
@@ -7,6 +8,6 @@ import { App } from './app';
   const port = process.env.PORT || 3005;
 
   app.server.listen(port, () => {
-    console.log(`[SERVER] LISTENING ON PORT ${port}`);
+    logger.info(`listening on port ${port}`);
   });
 })();

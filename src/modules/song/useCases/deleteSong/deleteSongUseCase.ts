@@ -1,27 +1,18 @@
+import { SongRepository } from '@modules/song/repositories/songRepository';
 import { AppError } from '@errors/appError';
-import { ISongRepository } from '@modules/song/repositories/ISongRepository';
-import { inject, injectable } from 'tsyringe';
-import  cache from '@shared/infra/redis';
-import { IRequest } from './iDeleteSongDTO';
+import cache from '@shared/infra/redis';
 
-@injectable()
-class DeleteSongUseCase {
-  constructor(
-    @inject('SongRepository')
-    private songRepository: ISongRepository
-  ) {}
+export class DeleteSongUseCase {
+  constructor(private readonly songRepository: SongRepository) {}
 
-  async execute({id}: IRequest): Promise<string>{
+  async execute(id: string): Promise<void> {
     const song = await this.songRepository.findByID(id);
 
-    if (!song) 
+    if (!song) {
       throw new AppError('Song does not exist', 404, 'Not Found');
+    }
 
     await this.songRepository.remove(song);
     await cache.del(id);
-
-    return "Deleted";
   }
 }
-
-export { DeleteSongUseCase };

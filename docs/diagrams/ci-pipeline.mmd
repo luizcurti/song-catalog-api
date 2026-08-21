@@ -1,0 +1,11 @@
+flowchart LR
+    Checkout["Checkout"] --> Install["npm ci"]
+    Install --> Lint["Lint"]
+    Lint --> Format["Format check"]
+    Format --> Typecheck["Type check"]
+    Typecheck --> Unit["Unit tests"]
+    Unit --> Migrate["Run migrations<br/>(MySQL + Redis service containers)"]
+    Migrate --> Integration["Integration tests"]
+    Integration --> E2e["E2E tests"]
+    E2e --> Build["Build"]
+    Build --> Verify["Verify dist/ output"]
